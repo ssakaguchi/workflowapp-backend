@@ -34,10 +34,19 @@ namespace WorkflowApp.Api.Tests.Controllers
             // Arrange
             var client = _factory.CreateClient();
 
-            // 登録したユーザーでログインしてトークンを取得する（登録は事前に行われている前提）
+            var registerRequest = new
+            {
+                loginId = $"testuser_{Guid.NewGuid():N}",
+                displayName = "Test User",
+                password = "Password123"
+            };
+
+            var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerRequest, cancellationToken: TestContext.Current.CancellationToken);
+            registerResponse.EnsureSuccessStatusCode();
+
             var loginRequest = new
             {
-                loginId = "testuser1",
+                loginId = registerRequest.loginId,
                 password = "Password123"
             };
 
@@ -62,8 +71,8 @@ namespace WorkflowApp.Api.Tests.Controllers
 
             Assert.NotNull(me);
             Assert.True(me.UserId > 0);
-            Assert.Equal("testuser1", me.LoginId);
-            Assert.Equal("Test User", me.DisplayName);
+            Assert.Equal(registerRequest.loginId, me.LoginId);
+            Assert.Equal(registerRequest.displayName, me.DisplayName);
         }
 
 

@@ -1,5 +1,5 @@
 @WorkflowApp.Api_HostAddress=http://localhost:5071
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJ0ZXN0dXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFwcGxpY2FudCIsImRpc3BsYXlOYW1lIjoiVGVzdCBVc2VyIiwiZXhwIjoxNzczOTk2MTE1LCJpc3MiOiJXb3JrZmxvd0FwcC5BcGkiLCJhdWQiOiJXb3JrZmxvd0FwcC5DbGllbnQifQ.xTz85FNDZ6vaxBhEtu9gHm-D8cgfYhJTUx5djmPaj1M
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJzdWIiOiJ0ZXN0dXNlciIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJ0ZXN0dXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFwcGxpY2FudCIsImRpc3BsYXlOYW1lIjoiVGVzdCBVc2VyIiwiZXhwIjoxNzc1Mzg1NjM0LCJpc3MiOiJXb3JrZmxvd0FwcC5BcGkiLCJhdWQiOiJXb3JrZmxvd0FwcC5DbGllbnQifQ.sru3Q9Fayvns7O-CVvFcxQ9etf-4uNLKFSYN78ixXYg
 
 ### register
 POST {{WorkflowApp.Api_HostAddress}}/api/auth/register
@@ -20,6 +20,16 @@ Content-Type: application/json
   "password": "Password123"
 }
 
-### ### 動作しなかったためコメントアウト（Postmanで同じリクエストを送信して期待通りの応答があることを確認）
-# GET {{WorkflowApp.Api_HostAddress}}/api/sample/me
-# Authorization: Bearer {{token}}
+##### 動作しなかったためコメントアウト（Postmanで同じリクエストを送信して期待通りの応答があることを確認）
+GET {{WorkflowApp.Api_HostAddress}}/api/sample/me
+Authorization: Bearer {{token}}
+
+###
+POST http://localhost:5071/api/applications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "出張申請",
+  "content": "4月10日の東京出張について申請します。"
+}
