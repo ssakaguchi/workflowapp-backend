@@ -8,5 +8,9 @@ namespace WorkflowApp.Api.Services.Interfaces
             CreateApplicationRequest request,
             int userId,
             CancellationToken cancellationToken);
+        
+        Task<List<ApplicationListItemResponse>> GetListAsync(int userId, CancellationToken cancellationToken);
+
+        Task<ApplicationDetailResponse?> GetDetailAsync(int id, int userId, CancellationToken cancellationToken);
     }
 }

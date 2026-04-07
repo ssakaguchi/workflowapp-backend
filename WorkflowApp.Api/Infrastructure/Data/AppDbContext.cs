@@ -11,8 +11,8 @@ namespace WorkflowApp.Api.Infrastructure.Data
         }
 
         // ユーザーのDbSetを追加
-        public DbSet<User> Users=> Set<User>();
-        
+        public DbSet<User> Users => Set<User>();
+
         // ワークフロー申請のDbSetを追加   
         public DbSet<Application> Applications => Set<Application>();
 

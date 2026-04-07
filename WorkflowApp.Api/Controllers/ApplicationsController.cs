@@ -45,5 +45,42 @@ namespace WorkflowApp.Api.Controllers
                                    new { id = result.Id },
                                    result);
         }
+
+        /// <summary>
+        /// 申請の一覧を取得します。認証されたユーザーの申請のみが返されます。
+        /// </summary>
+        /// <param name="none">キャンセルトークン</param>
+        /// <returns>申請の一覧</returns>
+        [HttpGet]
+        public async Task<IActionResult> GetList(CancellationToken none)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _service.GetListAsync(userId, none);
+            return Ok(result);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetDetail(int id, CancellationToken none)
+        {
+            // 認証されたユーザーのIDを取得
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _service.GetDetailAsync(id, userId, none);
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
     }
 }
