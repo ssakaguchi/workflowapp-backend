@@ -1,9 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using WorkflowApp.Api.DTOs.Applications;
-using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services.Interfaces;
 
 namespace WorkflowApp.Api.Controllers
@@ -14,13 +12,11 @@ namespace WorkflowApp.Api.Controllers
     public class ApplicationsController : ControllerBase
     {
         private IApplicationService _service;
-        private readonly AppDbContext _dbContext;
 
 
-        public ApplicationsController(IApplicationService service, AppDbContext dbContext)
+        public ApplicationsController(IApplicationService service)
         {
             this._service = service;
-            this._dbContext = dbContext;
         }
 
         /// <summary>
@@ -99,10 +95,10 @@ namespace WorkflowApp.Api.Controllers
         /// </summary>
         /// <param name="id">更新する申請のID</param>
         /// <param name="request">更新する申請の情報</param>
-        /// <param name="none">キャンセルトークン</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>更新結果</returns>
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, UpdateApplicationRequest request, CancellationToken none)
+        public async Task<IActionResult> Update(int id, UpdateApplicationRequest request, CancellationToken cancellationToken)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userIdClaim))
@@ -120,17 +116,11 @@ namespace WorkflowApp.Api.Controllers
                 return BadRequest("内容は必須です。");
             }
 
-            var application = _dbContext.Applications.FirstOrDefault(x => x.Id == id && x.ApplicantUserId.ToString() == userIdClaim);
-            if (application == null)
+            var isUpdated = await _service.UpdateAsync(id, request, userIdClaim, cancellationToken);
+            if (!isUpdated)
             {
                 return NotFound();
             }
-
-            application.Title = request.Title;
-            application.Content = request.Content;
-            application.UpdatedAt = DateTime.UtcNow;
-
-            await _dbContext.SaveChangesAsync(none);
 
             return NoContent();
         }
@@ -141,7 +131,7 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="id">削除する申請のID</param>
         /// <returns>削除結果</returns>
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userIdClaim))
@@ -149,16 +139,12 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var application = await _dbContext.Applications
-                .FirstOrDefaultAsync(x => x.Id == id && x.ApplicantUserId.ToString() == userIdClaim);
+            var isDeleted = await _service.DeleteAsync(id, userIdClaim, cancellationToken);
 
-            if (application is null)
+            if (!isDeleted)
             {
                 return NotFound();
             }
-
-            _dbContext.Applications.Remove(application);
-            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }

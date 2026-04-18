@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 using WorkflowApp.Api.Controllers;
 using WorkflowApp.Api.DTOs.Applications;
-using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services.Interfaces;
 
 namespace WorkflowApp.Api.Tests.Controllers
@@ -19,8 +18,7 @@ namespace WorkflowApp.Api.Tests.Controllers
             service.CreateAsync(Arg.Any<CreateApplicationRequest>(), 1, Arg.Any<CancellationToken>())
                 .Returns(new CreateApplicationResponse { Id = 10 });
 
-            var dbContext = Substitute.For<AppDbContext>();
-            var controller = new ApplicationsController(service, dbContext);
+            var controller = new ApplicationsController(service);
 
             var claim = new List<Claim>
             {
@@ -60,8 +58,7 @@ namespace WorkflowApp.Api.Tests.Controllers
         {
             // Arrange
             var service = Substitute.For<IApplicationService>();
-            var dbContext = Substitute.For<AppDbContext>();
-            var controller = new ApplicationsController(service, dbContext);
+            var controller = new ApplicationsController(service);
 
             // NameIdentifierクレームが存在しないClaimsPrincipalを作成
             var principal = new ClaimsPrincipal(new ClaimsIdentity());

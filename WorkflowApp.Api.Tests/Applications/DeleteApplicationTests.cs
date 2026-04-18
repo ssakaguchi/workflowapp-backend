@@ -1,10 +1,8 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WorkflowApp.Api.Domain.Entities;
-using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Tests.Helpers;
 
@@ -32,7 +30,7 @@ namespace WorkflowApp.Api.Tests.Applications
                                                         cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
         [Fact]

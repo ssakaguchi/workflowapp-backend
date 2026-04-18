@@ -12,5 +12,9 @@ namespace WorkflowApp.Api.Services.Interfaces
         Task<List<ApplicationListItemResponse>> GetListAsync(int userId, CancellationToken cancellationToken);
 
         Task<ApplicationDetailResponse?> GetDetailAsync(int id, int userId, CancellationToken cancellationToken);
+
+        Task<bool> DeleteAsync(int id, string userIdClaim, CancellationToken cancellationToken);
+
+        Task<bool> UpdateAsync(int id, UpdateApplicationRequest request, string userIdClaim, CancellationToken cancellationToken);
     }
 }

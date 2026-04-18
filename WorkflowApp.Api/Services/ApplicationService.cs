@@ -105,7 +105,59 @@ namespace WorkflowApp.Api.Services
                     CreatedAt = x.CreatedAt
                 })
                 // 必ず1件か0件の結果が返ることを期待しているため、SingleOrDefaultAsyncを使用しています。
-                .SingleOrDefaultAsync(cancellationToken);   
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// 申請を非同期で削除します。削除は申請者本人のみが行えるように、ユーザーIDを確認します。
+        /// </summary>
+        /// <param name="id">削除する申請のID</param>
+        /// <param name="userIdClaim">申請者のユーザーID</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>削除が成功したかどうか</returns>
+        public async Task<bool> DeleteAsync(int id,
+                                            string userIdClaim,
+                                            CancellationToken cancellationToken)
+        {
+            var application = await _dbContext.Applications
+                .FirstOrDefaultAsync(x => x.Id == id
+                && x.ApplicantUserId.ToString() == userIdClaim, cancellationToken);
+
+            if (application is null)
+            {
+                return false;
+            }
+
+            _dbContext.Applications.Remove(application);
+            await _dbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        /// <summary>
+        /// 申請を非同期で更新します。更新は申請者本人のみが行えるように、ユーザーIDを確認します。
+        /// </summary>
+        /// <param name="id">更新する申請のID</param>
+        /// <param name="request">更新する申請の情報</param>
+        /// <param name="userIdClaim">申請者のユーザーID</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>更新が成功したかどうか</returns>
+        public async Task<bool> UpdateAsync(int id, UpdateApplicationRequest request, string userIdClaim, CancellationToken cancellationToken)
+        {
+            var application = await _dbContext.Applications.FirstOrDefaultAsync(x => x.Id == id && x.ApplicantUserId.ToString() == userIdClaim,
+                                                                                cancellationToken);
+            if (application == null)
+            {
+                return false;
+            }
+
+            application.Title = request.Title;
+            application.Content = request.Content;
+            application.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return true;
         }
     }
 }
