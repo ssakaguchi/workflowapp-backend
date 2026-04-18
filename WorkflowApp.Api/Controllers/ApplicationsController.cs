@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services.Interfaces;
@@ -130,6 +131,34 @@ namespace WorkflowApp.Api.Controllers
             application.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(none);
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// 申請を削除します。認証されたユーザーの申請のみが削除されます。
+        /// </summary>
+        /// <param name="id">削除する申請のID</param>
+        /// <returns>削除結果</returns>
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim))
+            {
+                return Unauthorized();
+            }
+
+            var application = await _dbContext.Applications
+                .FirstOrDefaultAsync(x => x.Id == id && x.ApplicantUserId.ToString() == userIdClaim);
+
+            if (application is null)
+            {
+                return NotFound();
+            }
+
+            _dbContext.Applications.Remove(application);
+            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }
