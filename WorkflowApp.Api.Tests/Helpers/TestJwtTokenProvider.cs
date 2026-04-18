@@ -17,7 +17,7 @@ namespace WorkflowApp.Api.Tests.Helpers
         /// </summary>
         /// <param name="userId">ユーザーID</param>
         /// <returns>JWTトークン</returns>
-        public static string CreateToken(string userId = "test-user-id")
+        public static string CreateToken(string userId = "1")
         {
             var claims = new[]
             {

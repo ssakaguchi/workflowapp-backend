@@ -10,6 +10,10 @@ namespace WorkflowApp.Api.Infrastructure.Data
         {
         }
 
+        public AppDbContext()
+        {
+        }
+
         // ユーザーのDbSetを追加
         public DbSet<User> Users => Set<User>();
 
