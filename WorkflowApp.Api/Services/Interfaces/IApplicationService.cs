@@ -1,4 +1,5 @@
-﻿using WorkflowApp.Api.DTOs.Applications;
+﻿using WorkflowApp.Api.Domain.Enums;
+using WorkflowApp.Api.DTOs.Applications;
 
 namespace WorkflowApp.Api.Services.Interfaces
 {
@@ -16,5 +17,7 @@ namespace WorkflowApp.Api.Services.Interfaces
         Task<bool> DeleteAsync(int id, string userIdClaim, CancellationToken cancellationToken);
 
         Task<bool> UpdateAsync(int id, UpdateApplicationRequest request, string userIdClaim, CancellationToken cancellationToken);
+
+        Task<bool> UpdateWorkflowStatusAsync(int id, WorkflowStatus status, int userId, CancellationToken cancellationToken);
     }
 }

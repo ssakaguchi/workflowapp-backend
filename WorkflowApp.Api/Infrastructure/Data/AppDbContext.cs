@@ -58,6 +58,14 @@ namespace WorkflowApp.Api.Infrastructure.Data
                 entity.HasIndex(x => x.LoginId)
                     .IsUnique();
             });
+
+            // ApplicationエンティティのStatusプロパティに対して、WorkflowStatus列挙型を文字列として保存するように変換を設定
+            modelBuilder.Entity<Application>(entity =>
+            {
+                entity.Property(x => x.Status)
+                    .HasConversion<string>()
+                    .IsRequired();
+            });
         }
     }
 }

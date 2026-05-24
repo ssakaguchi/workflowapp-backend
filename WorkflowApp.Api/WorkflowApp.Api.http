@@ -33,3 +33,13 @@ Content-Type: application/json
   "title": "出張申請",
   "content": "4月10日の東京出張について申請します。"
 }
+
+#### 
+@id=7
+PATCH http://localhost:5071/api/applications/{{id}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Approved"
+}

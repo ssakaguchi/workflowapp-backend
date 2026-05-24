@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WorkflowApp.Api.Domain.Entities;
+using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services.Interfaces;
@@ -53,7 +54,7 @@ namespace WorkflowApp.Api.Services
                 Id = application.Id,
                 Title = application.Title,
                 Content = application.Content,
-                Status = application.Status,
+                Status = application.Status.ToString(),
                 ApplicantUserId = application.ApplicantUserId,
                 CreatedAt = application.CreatedAt
             };
@@ -76,7 +77,7 @@ namespace WorkflowApp.Api.Services
                 {
                     Id = x.Id,
                     Title = x.Title,
-                    Status = x.Status,
+                    Status = x.Status.ToString(),
                     CreatedAt = x.CreatedAt
                 })
                 .ToListAsync(cancellationToken);
@@ -100,7 +101,7 @@ namespace WorkflowApp.Api.Services
                     Id = x.Id,
                     Title = x.Title,
                     Content = x.Content,
-                    Status = x.Status,
+                    Status = x.Status.ToString(),
                     ApplicantUserId = x.ApplicantUserId,
                     CreatedAt = x.CreatedAt
                 })
@@ -153,6 +154,32 @@ namespace WorkflowApp.Api.Services
 
             application.Title = request.Title;
             application.Content = request.Content;
+            application.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+
+        /// <summary>
+        /// ワークフローのステータスを非同期で更新します。更新は申請者本人のみが行えるように、ユーザーIDを確認します。
+        /// </summary>
+        /// <param name="id">更新する申請のID</param>
+        /// <param name="status">更新するステータスの情報</param>
+        /// <param name="userId">申請者のユーザーID</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>更新が成功したかどうか</returns>
+        /// <exception cref="ArgumentException"></exception>
+        public async Task<bool> UpdateWorkflowStatusAsync(int id, WorkflowStatus status, int userId, CancellationToken cancellationToken)
+        {
+            var application = await _dbContext.Applications.FirstOrDefaultAsync(x => x.Id == id && x.ApplicantUserId == userId,
+                                                                                cancellationToken);
+            if (application == null)
+            {
+                return false;
+            }
+
+            application.Status = status;
             application.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
