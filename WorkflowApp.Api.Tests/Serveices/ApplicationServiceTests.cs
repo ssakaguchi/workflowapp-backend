@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services;
@@ -36,7 +37,7 @@ namespace WorkflowApp.Api.Tests.Serveices
 
             Assert.Equal(request.Title, savedApplication.Title);
             Assert.Equal(request.Content, savedApplication.Content);
-            Assert.Equal("Pending", savedApplication.Status);
+            Assert.Equal(WorkflowStatus.Pending, savedApplication.Status);
             Assert.Equal(userId, savedApplication.ApplicantUserId);
 
             // CreatedAtは現在時刻とほぼ同じであることを確認

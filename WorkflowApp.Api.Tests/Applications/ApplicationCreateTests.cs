@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using WorkflowApp.Api.Domain.Entities;
+using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services.Interfaces;
@@ -84,7 +85,7 @@ namespace WorkflowApp.Api.Tests.Applications
             savedApplication.Title.Should().Be(request.Title);
             savedApplication.Content.Should().Be(request.Content);
             savedApplication.ApplicantUserId.Should().Be(userId);
-            savedApplication.Status.Should().Be("Pending");
+            savedApplication.Status.Should().Be(WorkflowStatus.Pending);
         }
 
         [Fact]

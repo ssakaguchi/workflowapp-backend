@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using WorkflowApp.Api.Domain.Entities;
+using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Services.Interfaces;
@@ -66,7 +67,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     {
                         Title = "出張申請",
                         Content = "東京出張の申請です。",
-                        Status = "Pending",
+                        Status = WorkflowStatus.Pending,
                         ApplicantUserId = loginUser.Id,
                         CreatedAt = DateTime.UtcNow.AddMinutes(-10)
                     },
@@ -74,7 +75,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     {
                         Title = "備品購入申請",
                         Content = "キーボード購入の申請です。",
-                        Status = "Approved",
+                        Status = WorkflowStatus.Approved,
                         ApplicantUserId = loginUser.Id,
                         CreatedAt = DateTime.UtcNow.AddMinutes(-5)
                     },
@@ -82,7 +83,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     {
                         Title = "他ユーザーの申請",
                         Content = "これは取得対象外です。",
-                        Status = "Pending",
+                        Status = WorkflowStatus.Pending,
                         ApplicantUserId = otherUser.Id,
                         CreatedAt = DateTime.UtcNow
                     });

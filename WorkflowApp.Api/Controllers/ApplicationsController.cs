@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Services.Interfaces;
 
@@ -142,6 +143,38 @@ namespace WorkflowApp.Api.Controllers
             var isDeleted = await _service.DeleteAsync(id, userIdClaim, cancellationToken);
 
             if (!isDeleted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// 申請のステータスを更新します。認証されたユーザーの申請のみが更新されます。
+        /// </summary>
+        /// <param name="id">更新する申請のID</param>
+        /// <param name="request">更新する申請の情報</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>更新結果</returns>
+        [HttpPatch("{id:int}/status")]
+        public async Task<IActionResult> UpdateWorkflowStatus(int id, UpdateWorkflowStatusRequest request, CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            // ステータスの検証とパース
+            if (string.IsNullOrWhiteSpace(request.Status) || 
+                !Enum.TryParse<WorkflowStatus>(request.Status, ignoreCase: false, out var status))
+            {
+                return BadRequest("無効なステータスです。");
+            }
+
+            var isUpdated = await _service.UpdateWorkflowStatusAsync(id, status, userId, cancellationToken);
+            if (!isUpdated)
             {
                 return NotFound();
             }
