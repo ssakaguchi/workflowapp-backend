@@ -169,7 +169,6 @@ namespace WorkflowApp.Api.Services
         /// <param name="userId">申請者のユーザーID</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>更新が成功したかどうか</returns>
-        /// <exception cref="ArgumentException"></exception>
         public async Task<bool> UpdateWorkflowStatusAsync(int id, WorkflowStatus status, int userId, CancellationToken cancellationToken)
         {
             var application = await _dbContext.Applications.FirstOrDefaultAsync(x => x.Id == id && x.ApplicantUserId == userId,
