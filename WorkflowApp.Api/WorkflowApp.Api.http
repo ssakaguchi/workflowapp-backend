@@ -34,7 +34,7 @@ Content-Type: application/json
   "content": "4月10日の東京出張について申請します。"
 }
 
-#### 
+### update status
 @id=7
 PATCH http://localhost:5071/api/applications/{{id}}/status
 Authorization: Bearer {{token}}
