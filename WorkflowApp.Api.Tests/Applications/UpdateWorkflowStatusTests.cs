@@ -113,6 +113,7 @@ namespace WorkflowApp.Api.Tests.Applications
             Assert.Equal("タイトル", updatedApplication!.Title);
             Assert.Equal("本文", updatedApplication.Content);
             Assert.Equal(WorkflowStatus.Approved, updatedApplication.Status);
+            Assert.True((DateTime.UtcNow - updatedApplication.UpdatedAt).TotalSeconds < 5);
         }
 
         [Fact]
