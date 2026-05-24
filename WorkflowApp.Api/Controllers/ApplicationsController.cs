@@ -166,12 +166,12 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            // WorkflowStatus列挙型の名前を取得して、リクエストのステータスが有効かどうかを検証
-            var allowedStatuses = Enum.GetNames(typeof(WorkflowStatus));
-            if (string.IsNullOrWhiteSpace(request.Status)) { return BadRequest("無効なステータスです。"); }           
-            if (Array.IndexOf(allowedStatuses, request.Status) < 0) { return BadRequest("無効なステータスです。"); }
-            if (!Enum.TryParse<WorkflowStatus>(request.Status, ignoreCase: false, out var status)) { return BadRequest("無効なステータスです。"); }
-
+            // ステータスの検証とパース
+            if (string.IsNullOrWhiteSpace(request.Status) || 
+                !Enum.TryParse<WorkflowStatus>(request.Status, ignoreCase: false, out var status))
+            {
+                return BadRequest("無効なステータスです。");
+            }
 
             var isUpdated = await _service.UpdateWorkflowStatusAsync(id, status, userId, cancellationToken);
             if (!isUpdated)
