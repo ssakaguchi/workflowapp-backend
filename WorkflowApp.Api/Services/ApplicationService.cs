@@ -185,5 +185,53 @@ namespace WorkflowApp.Api.Services
 
             return true;
         }
+
+        /// <summary>
+        /// 申請の一覧をページネーション付きで取得します。
+        /// </summary>
+        /// <param name="page">取得するページ番号</param>
+        /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="status">フィルタリングするステータス（省略可能）</param>
+        /// <param name="userId">フィルタリングするユーザーID</param>    
+        /// <returns>ページネーションされた申請の一覧</returns>
+        public async Task<PagedResponse<ApplicationListItemResponse>> GetApplications(int page, int pageSize, string? status, int userId)
+        {
+            // クエリの初期化
+            var query = _dbContext.Applications
+                .Where(x => x.ApplicantUserId == userId)
+                .AsQueryable();
+
+            // 無効なステータスが指定された場合は、フィルタリングを行わない
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<WorkflowStatus>(status.Trim(), ignoreCase: true, out var parsedStatus))
+            {
+                query = query.Where(x => x.Status == parsedStatus);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
+            var items = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new ApplicationListItemResponse
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Status = x.Status.ToString(),
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return new PagedResponse<ApplicationListItemResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
     }
 }
