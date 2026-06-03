@@ -194,7 +194,7 @@ namespace WorkflowApp.Api.Services
         /// <param name="status">フィルタリングするステータス（省略可能）</param>
         /// <param name="userId">フィルタリングするユーザーID</param>    
         /// <returns>ページネーションされた申請の一覧</returns>
-        public async Task<PagedResponse<ApplicationListItemResponse>> GetApplications(int page, int pageSize, string? status, int userId)
+        public async Task<PagedResponse<ApplicationListItemResponse>> GetApplicationsAsync(int page, int pageSize, string? status, int userId)
         {
             // クエリの初期化
             var query = _dbContext.Applications

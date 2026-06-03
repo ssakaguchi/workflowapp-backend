@@ -208,7 +208,7 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _service.GetApplications(page, pageSize, status?.Trim(), userId);
+            var result = await _service.GetApplicationsAsync(page, pageSize, status?.Trim(), userId);
 
             return Ok(result);
         }
