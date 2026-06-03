@@ -210,9 +210,28 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _service.GetApplicationsAsync(page, pageSize, status?.Trim(), userId, cancellationToken);
+            var trimmedStatus = status?.Trim();
+
+            if (IsInvalidStatus(trimmedStatus))
+            {
+                return BadRequest("無効なステータスです。");
+            }
+
+            var result = await _service.GetApplicationsAsync(page, pageSize, trimmedStatus, userId, cancellationToken);
 
             return Ok(result);
+        }
+
+        /// <summary>
+        /// 指定されたステータスが無効かどうかを判定します。
+        /// </summary>
+        /// <param name="trimmedStatus">前後の空白を除去したステータス文字列</param>
+        /// <returns>無効なステータスの場合はtrue、それ以外はfalse</returns>
+        private static bool IsInvalidStatus(string? trimmedStatus)
+        {
+            return !string.IsNullOrWhiteSpace(trimmedStatus) &&
+                   !string.Equals(trimmedStatus, "All", StringComparison.OrdinalIgnoreCase) &&
+                   !Enum.TryParse<WorkflowStatus>(trimmedStatus, ignoreCase: true, out _);
         }
     }
 }
