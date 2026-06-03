@@ -7,7 +7,6 @@ using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
-using WorkflowApp.Api.Infrastructure.Security;
 using WorkflowApp.Api.Services.Interfaces;
 using WorkflowApp.Api.Tests.Helpers;
 
