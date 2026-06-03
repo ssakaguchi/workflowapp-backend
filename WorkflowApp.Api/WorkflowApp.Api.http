@@ -1,5 +1,5 @@
 @WorkflowApp.Api_HostAddress=http://localhost:5071
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJzdWIiOiJ0ZXN0dXNlciIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJ0ZXN0dXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFwcGxpY2FudCIsImRpc3BsYXlOYW1lIjoiVGVzdCBVc2VyIiwiZXhwIjoxNzc2MzQ2MTgxLCJpc3MiOiJXb3JrZmxvd0FwcC5BcGkiLCJhdWQiOiJXb3JrZmxvd0FwcC5DbGllbnQifQ.9WZv1TiSVNRaKwEdRR2pzeAlNA_AYPHfV_q-Xjn3Ngo
+@token=YOUR_JWT_TOKEN_HERE
 
 ### register
 POST {{WorkflowApp.Api_HostAddress}}/api/auth/register
@@ -25,7 +25,7 @@ GET {{WorkflowApp.Api_HostAddress}}/api/sample/me
 Authorization: Bearer {{token}}
 
 ###
-POST http://localhost:5071/api/applications
+POST {{WorkflowApp.Api_HostAddress}}/api/applications
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -36,10 +36,14 @@ Content-Type: application/json
 
 ### update status
 @id=7
-PATCH http://localhost:5071/api/applications/{{id}}/status
+PATCH {{WorkflowApp.Api_HostAddress}}/api/applications/{{id}}/status
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "status": "Approved"
 }
+
+### get applications
+GET {{WorkflowApp.Api_HostAddress}}/api/applications?page=1&pageSize=10
+Authorization: Bearer {{token}}

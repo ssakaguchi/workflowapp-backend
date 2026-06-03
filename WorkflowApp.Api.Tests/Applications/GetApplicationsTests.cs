@@ -12,17 +12,30 @@ using WorkflowApp.Api.Tests.Helpers;
 
 namespace WorkflowApp.Api.Tests.Applications
 {
-    public class ApplicationListTests : IClassFixture<CustomWebApplicationFactory>
+    public class GetApplicationsTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly CustomWebApplicationFactory _factory;
 
-        public ApplicationListTests(CustomWebApplicationFactory factory)
+        public GetApplicationsTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
         }
 
         [Fact]
-        public async Task Get_認証済みユーザーの場合_自分の申請一覧を返すこと()
+        public async Task 未認証の場合は401Unauthorizedを返す()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync("/api/applications", cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task 認証されたユーザーの申請のみが返される()
         {
             // Arrange
             var client = _factory.CreateClient();
@@ -93,41 +106,27 @@ namespace WorkflowApp.Api.Tests.Applications
                 token = jwtTokenService.CreateToken(loginUser).Token;
             }
 
-            client.DefaultRequestHeaders.Authorization = 
+            client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
-
-            // Act
-            var response = await client.GetAsync("/api/applications/list", TestContext.Current.CancellationToken);
-
-            // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-            var responseBody = await response.Content.ReadFromJsonAsync<List<ApplicationListItemResponse>>(
-                cancellationToken: TestContext.Current.CancellationToken);
-
-            responseBody.Should().NotBeNull();
-            responseBody.Should().HaveCount(2);
-
-            responseBody.Select(x => x.Title)
-                .Should()
-                .BeEquivalentTo(new[] { "出張申請", "備品購入申請" });
-
-            responseBody.Should().OnlyContain(
-                x => x.Title == "出張申請" || x.Title == "備品購入申請");
-
-        }
-
-        [Fact]
-        public async Task Get_未認証の場合_401Unauthorizedを返すこと()
-        {
-            // Arrange
-            var client = _factory.CreateClient();
 
             // Act
             var response = await client.GetAsync("/api/applications", TestContext.Current.CancellationToken);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var responseBody = await response.Content.ReadFromJsonAsync<PagedResponse<ApplicationListItemResponse>>(
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            responseBody.Should().NotBeNull();
+            responseBody.Items.Should().HaveCount(2);
+
+            responseBody.Items.Select(x => x.Title)
+                .Should()
+                .BeEquivalentTo(new[] { "出張申請", "備品購入申請" });
+
+            responseBody.Items.Should().OnlyContain(
+                x => x.Title == "出張申請" || x.Title == "備品購入申請");
         }
     }
 }

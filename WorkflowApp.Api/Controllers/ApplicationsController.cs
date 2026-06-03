@@ -53,7 +53,7 @@ namespace WorkflowApp.Api.Controllers
         /// </summary>
         /// <param name="none">キャンセルトークン</param>
         /// <returns>申請の一覧</returns>
-        [HttpGet]
+        [HttpGet("list")]
         public async Task<IActionResult> GetList(CancellationToken none)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -167,7 +167,7 @@ namespace WorkflowApp.Api.Controllers
             }
 
             // ステータスの検証とパース
-            if (string.IsNullOrWhiteSpace(request.Status) || 
+            if (string.IsNullOrWhiteSpace(request.Status) ||
                 !Enum.TryParse<WorkflowStatus>(request.Status, ignoreCase: false, out var status))
             {
                 return BadRequest("無効なステータスです。");
@@ -180,6 +180,58 @@ namespace WorkflowApp.Api.Controllers
             }
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// 申請の一覧をページネーション付きで取得します。
+        /// </summary>
+        /// <param name="page">取得するページ番号</param>
+        /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="status">フィルタリングするステータス（省略可能）</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>ページネーションされた申請の一覧</returns>
+        [HttpGet]
+        public async Task<ActionResult<PagedResponse<ApplicationListItemResponse>>> GetApplications(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? status = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (page < 1) { page = 1; }
+
+            if (pageSize < 1) { pageSize = 10; }
+
+            if (pageSize > 100) { pageSize = 100; }
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var trimmedStatus = status?.Trim();
+
+            if (IsInvalidStatus(trimmedStatus))
+            {
+                return BadRequest("無効なステータスです。");
+            }
+
+            var result = await _service.GetApplicationsAsync(page, pageSize, trimmedStatus, userId, cancellationToken);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 指定されたステータスが無効かどうかを判定します。
+        /// </summary>
+        /// <param name="trimmedStatus">前後の空白を除去したステータス文字列</param>
+        /// <returns>無効なステータスの場合はtrue、それ以外はfalse</returns>
+        private static bool IsInvalidStatus(string? trimmedStatus)
+        {
+            return !string.IsNullOrWhiteSpace(trimmedStatus) &&
+                   !string.Equals(trimmedStatus, "All", StringComparison.OrdinalIgnoreCase) &&
+                   !Enum.TryParse<WorkflowStatus>(trimmedStatus, ignoreCase: true, out _);
         }
     }
 }
