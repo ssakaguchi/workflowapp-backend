@@ -188,12 +188,14 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="page">取得するページ番号</param>
         /// <param name="pageSize">1ページあたりの件数</param>
         /// <param name="status">フィルタリングするステータス（省略可能）</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>ページネーションされた申請の一覧</returns>
         [HttpGet]
         public async Task<ActionResult<PagedResponse<ApplicationListItemResponse>>> GetApplications(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] string? status = null)
+            [FromQuery] string? status = null,
+            CancellationToken cancellationToken = default)
         {
             if (page < 1) { page = 1; }
 
@@ -208,7 +210,7 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _service.GetApplicationsAsync(page, pageSize, status?.Trim(), userId);
+            var result = await _service.GetApplicationsAsync(page, pageSize, status?.Trim(), userId, cancellationToken);
 
             return Ok(result);
         }
