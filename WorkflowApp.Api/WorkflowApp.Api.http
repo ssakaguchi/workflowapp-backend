@@ -25,7 +25,7 @@ GET {{WorkflowApp.Api_HostAddress}}/api/sample/me
 Authorization: Bearer {{token}}
 
 ###
-POST http://localhost:5071/api/applications
+POST {{WorkflowApp.Api_HostAddress}}/api/applications
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -36,7 +36,7 @@ Content-Type: application/json
 
 ### update status
 @id=7
-PATCH http://localhost:5071/api/applications/{{id}}/status
+PATCH {{WorkflowApp.Api_HostAddress}}/api/applications/{{id}}/status
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -45,5 +45,5 @@ Content-Type: application/json
 }
 
 ### get applications
-GET http://localhost:5071/api/applications?page=1&pageSize=10
+GET {{WorkflowApp.Api_HostAddress}}/api/applications?page=1&pageSize=10
 Authorization: Bearer {{token}}
