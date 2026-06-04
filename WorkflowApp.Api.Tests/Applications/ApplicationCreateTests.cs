@@ -19,6 +19,14 @@ namespace WorkflowApp.Api.Tests.Applications
         public ApplicationCreateTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+
+            // 各テストの前にDBをクリーンアップ
+            using var scope = _factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            dbContext.Applications.RemoveRange(dbContext.Applications);
+            dbContext.Users.RemoveRange(dbContext.Users);
+            dbContext.SaveChanges();
         }
 
 
@@ -39,7 +47,7 @@ namespace WorkflowApp.Api.Tests.Applications
                 // テストユーザーの作成
                 var user = new User
                 {
-                    LoginId = "applicant01",
+                    LoginId = $"applicant-{Guid.NewGuid()}",
                     DisplayName = "テスト申請者",
                     PasswordHash = "dummy-hash",
                     Role = "Applicant",
@@ -241,7 +249,7 @@ namespace WorkflowApp.Api.Tests.Applications
                 // テストユーザーの作成
                 var user = new User
                 {
-                    LoginId = "applicant01",
+                    LoginId = $"applicant-{Guid.NewGuid()}",
                     DisplayName = "テスト申請者",
                     PasswordHash = "dummy-hash",
                     Role = "Applicant",
