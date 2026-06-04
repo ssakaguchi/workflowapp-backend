@@ -1,4 +1,4 @@
-# WorkflowApp.Api
+# Workflow App Backend
 
 WorkflowApp.Api は、業務ワークフローにおける「申請」機能を想定した ASP.NET Core Web API です。
 
