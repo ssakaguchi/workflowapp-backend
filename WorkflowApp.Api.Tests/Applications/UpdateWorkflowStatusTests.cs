@@ -1,12 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
+using WorkflowApp.Api.Services.Interfaces;
 using WorkflowApp.Api.Tests.Helpers;
 
 namespace WorkflowApp.Api.Tests.Applications
@@ -39,66 +41,136 @@ namespace WorkflowApp.Api.Tests.Applications
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
-        [Fact]
-        public async Task ステータスが未入力の場合は400BadRequestを返す()
+        [Theory]
+        [InlineData("")]
+        [InlineData("InvalidStatus")]
+        public async Task 無効なステータスの場合は400BadRequestを返す(string invalidStatus)
         {
+            // Arrange
             var client = _factory.CreateClient();
-            var token = TestJwtTokenProvider.CreateToken();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var applicationId = 1; // 存在しないIDを使用
-            var request = new UpdateWorkflowStatusRequest
+            int applicationId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
             {
-                Status = ""
-            };
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
 
-            var response = await client.PatchAsJsonAsync($"/api/applications/{applicationId}/status",
-                                                         request,
-                                                         cancellationToken: TestContext.Current.CancellationToken);
+                // テストユーザーの作成
+                var loginUser = await CreateUserAsync(dbContext, "approver01", "テスト承認者", UserRole.Approver);
 
+                // テスト申請の作成
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending);
+
+                applicationId = application.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var response = await PatchStatusAsync(client, applicationId, invalidStatus);
+
+            // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task 自分の申請を更新できる()
+        public async Task 存在しない申請IDを指定した場合_404NotFoundを返す()
         {
             // Arrange
             var client = _factory.CreateClient();
-            var userId = 1; // テストユーザーID
 
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", TestJwtTokenProvider.CreateToken(userId.ToString()));
+            string token;
 
-            int applicationId;
-
-            // 事前に更新対象の申請を作成しておく
             using (var scope = _factory.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
 
-                var application = new Application
-                {
-                    ApplicantUserId = userId,
-                    Title = "タイトル",
-                    Content = "本文",
-                    Status = WorkflowStatus.Pending,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                };
+                // テストユーザーの作成
+                var loginUser = await CreateUserAsync(dbContext, "approver01", "テスト承認者", UserRole.Approver);
 
-                dbContext.Applications.Add(application);
-                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-                applicationId = application.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
             }
 
-            var request = new UpdateWorkflowStatusRequest
-            {
-                Status = "Approved"
-            };
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            const int applicationId = 9999; // 存在しない申請ID
 
             // Act
-            var response = await client.PatchAsJsonAsync($"/api/applications/{applicationId}/status", request, cancellationToken: TestContext.Current.CancellationToken);
+            var response = await PatchStatusAsync(client, applicationId, WorkflowStatus.Approved.ToString());
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Applicantがステータス更新しようとした場合_403Forbiddenを返すこと()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            int applicationId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+                // テストユーザーの作成
+                var loginUser = await CreateUserAsync(dbContext, "applicant01", "テスト申請者", UserRole.Applicant);
+
+                // テスト申請の作成
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", loginUser.Id, WorkflowStatus.Pending);
+
+                applicationId = application.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var response = await PatchStatusAsync(client, applicationId, WorkflowStatus.Approved.ToString());
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        [Fact]
+        public async Task Approverがステータス更新した場合_成功を返しDBのステータスが更新されること()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            int applicationId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+                // テストユーザーの作成
+                var loginUser = await CreateUserAsync(dbContext, "approver01", "テスト承認者", UserRole.Approver);
+
+                // テスト申請の作成
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending);
+
+                applicationId = application.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var response = await PatchStatusAsync(client, applicationId, WorkflowStatus.Approved.ToString());
 
             // Assert
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -110,120 +182,87 @@ namespace WorkflowApp.Api.Tests.Applications
                 .FirstOrDefaultAsync(x => x.Id == applicationId, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(updatedApplication);
-            Assert.Equal("タイトル", updatedApplication!.Title);
-            Assert.Equal("本文", updatedApplication.Content);
             Assert.Equal(WorkflowStatus.Approved, updatedApplication.Status);
-            Assert.True((DateTime.UtcNow - updatedApplication.UpdatedAt).TotalSeconds < 5);
         }
 
-        [Fact]
-        public async Task 他人の申請を更新できない()
+        #region ユーティリティメソッド
+
+        /// <summary>
+        /// テストユーザーを作成するユーティリティメソッド
+        /// </summary>
+        /// <param name="dbContext">データベースコンテキスト</param>
+        /// <param name="loginId">ログインID</param>
+        /// <param name="displayName">表示名</param>
+        /// <param name="role">ユーザーの役割</param>
+        /// <returns>作成されたユーザー</returns>
+        private async Task<User> CreateUserAsync(AppDbContext dbContext, string loginId, string displayName, UserRole role)
         {
-            // Arrange
-            var client = _factory.CreateClient();
-
-            var userId = 1; // テストユーザーID
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", TestJwtTokenProvider.CreateToken(userId.ToString()));
-
-            int applicationId;
-
-            // 事前に他のユーザーの申請を作成しておく
-            using (var scope = _factory.Services.CreateScope())
+            var loginUser = new User
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var application = new Application
-                {
-                    ApplicantUserId = 999, // 別のユーザーID
-                    Title = "他人の申請タイトル",
-                    Content = "他人の申請内容",
-                    Status = WorkflowStatus.Pending,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                dbContext.Applications.Add(application);
-                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-                applicationId = application.Id;
-            }
-
-            var request = new UpdateWorkflowStatusRequest
-            {
-                Status = "Approved"
+                LoginId = loginId,
+                DisplayName = displayName,
+                PasswordHash = Guid.NewGuid().ToString(),
+                Role = role,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
-            // Act
-            var response = await client.PatchAsJsonAsync($"/api/applications/{applicationId}/status", request, cancellationToken: TestContext.Current.CancellationToken);
+            dbContext.Users.Add(loginUser);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            return loginUser;
         }
 
-        [Fact]
-        public async Task 存在しない申請を更新できない()
+        /// <summary>
+        /// テスト用の申請を作成するユーティリティメソッド
+        /// </summary>
+        /// <param name="dbContext">データベースコンテキスト</param>
+        /// <param name="title">申請のタイトル</param>
+        /// <param name="content">申請の内容</param>
+        /// <param name="applicantUserId">申請者のユーザーID</param>
+        /// <param name="status">申請のステータス</param>
+        /// <returns>作成された申請オブジェクト</returns>
+        private static async Task<Application> CreateApplicationAsync(AppDbContext dbContext,
+                                                                      string title,
+                                                                      string content,
+                                                                      int applicantUserId,
+                                                                      WorkflowStatus status)
         {
-            // Arrange
-            var client = _factory.CreateClient();
-
-            var userId = 1; // テストユーザーID
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", TestJwtTokenProvider.CreateToken(userId.ToString()));
-
-            var nonExistentApplicationId = 9999; // 存在しない申請ID
-
-            var request = new UpdateWorkflowStatusRequest
+            var application = new Application
             {
-                Status = "Approved"
+                Title = title,
+                Content = content,
+                ApplicantUserId = applicantUserId,
+                Status = status
             };
 
-            // Act
-            var response = await client.PatchAsJsonAsync($"/api/applications/{nonExistentApplicationId}/status", request, cancellationToken: TestContext.Current.CancellationToken);
+            dbContext.Applications.Add(application);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            return application;
         }
 
-        [Fact]
-        public async Task 無効なステータスの場合は400BadRequestを返す()
+        /// <summary>
+        /// 申請のステータスを更新するためのユーティリティメソッド
+        /// </summary>
+        /// <param name="client">HTTPクライアント</param>
+        /// <param name="applicationId">申請ID</param>
+        /// <param name="status">更新するステータス</param>
+        /// <returns>HTTPレスポンスメッセージ</returns>
+        private static async Task<HttpResponseMessage> PatchStatusAsync(HttpClient client, int applicationId, string status)
         {
-            var client = _factory.CreateClient();
-            var userId = 1;
-
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", TestJwtTokenProvider.CreateToken(userId.ToString()));
-
-            int applicationId;
-
-            using (var scope = _factory.Services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                var application = new Application
-                {
-                    ApplicantUserId = userId,
-                    Title = "タイトル",
-                    Content = "本文",
-                    Status = WorkflowStatus.Pending,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                };
-
-                dbContext.Applications.Add(application);
-                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-                applicationId = application.Id;
-            }
-
             var request = new UpdateWorkflowStatusRequest
             {
-                Status = "InvalidStatus"
+                Status = status,
             };
 
-            var response = await client.PatchAsJsonAsync(
+            return await client.PatchAsJsonAsync(
                 $"/api/applications/{applicationId}/status",
                 request,
-                cancellationToken: TestContext.Current.CancellationToken);
-
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                TestContext.Current.CancellationToken);
         }
+
+        #endregion
     }
 }

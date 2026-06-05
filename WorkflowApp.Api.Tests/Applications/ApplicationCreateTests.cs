@@ -50,7 +50,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     LoginId = $"applicant-{Guid.NewGuid()}",
                     DisplayName = "テスト申請者",
                     PasswordHash = "dummy-hash",
-                    Role = "Applicant",
+                    Role = UserRole.Applicant,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -252,7 +252,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     LoginId = $"applicant-{Guid.NewGuid()}",
                     DisplayName = "テスト申請者",
                     PasswordHash = "dummy-hash",
-                    Role = "Applicant",
+                    Role = UserRole.Applicant,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
