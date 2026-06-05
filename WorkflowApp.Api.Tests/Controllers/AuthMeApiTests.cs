@@ -1,15 +1,15 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
+using WorkflowApp.Api.Tests.Helpers;
 
 namespace WorkflowApp.Api.Tests.Controllers
 {
-    public class AuthMeApiTests : IClassFixture<WebApplicationFactory<Program>>
+    public class AuthMeApiTests : IClassFixture<CustomWebApplicationFactory>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        private readonly CustomWebApplicationFactory _factory;
 
-        public AuthMeApiTests(WebApplicationFactory<Program> factory)
+        public AuthMeApiTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
         }

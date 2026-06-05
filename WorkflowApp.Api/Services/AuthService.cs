@@ -4,6 +4,7 @@ using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.DTOs.Auth;
 using WorkflowApp.Api.Services.Interfaces;
+using WorkflowApp.Api.Domain.Enums;
 
 namespace WorkflowApp.Api.Services
 {
@@ -46,7 +47,7 @@ namespace WorkflowApp.Api.Services
             {
                 LoginId = request.LoginId,
                 DisplayName = request.DisplayName,
-                Role = "Applicant",
+                Role = UserRole.Applicant,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

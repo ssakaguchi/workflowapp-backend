@@ -1,4 +1,6 @@
-﻿namespace WorkflowApp.Api.Domain.Entities
+﻿using WorkflowApp.Api.Domain.Enums;
+
+namespace WorkflowApp.Api.Domain.Entities
 {
     public class User
     {
@@ -10,7 +12,7 @@
 
         public string PasswordHash { get; set; } = string.Empty;
 
-        public string Role { get; set; } = "Applicant";
+        public UserRole Role { get; set; } = UserRole.Applicant;
 
         public bool IsActive { get; set; } = true;
 

@@ -48,7 +48,7 @@ namespace WorkflowApp.Api.Infrastructure.Security
                 new (ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new (JwtRegisteredClaimNames.Sub, user.LoginId),
                 new (ClaimTypes.Name, user.LoginId),
-                new (ClaimTypes.Role, user.Role),
+                new (ClaimTypes.Role, user.Role.ToString()),
                 new ("displayName", user.DisplayName),
             };
 
@@ -75,7 +75,7 @@ namespace WorkflowApp.Api.Infrastructure.Security
                 Token = tokenValue,
                 LoginId = user.LoginId,
                 DisplayName = user.DisplayName,
-                Role = user.Role,
+                Role = user.Role.ToString(),
                 ExpiresAt = expiresAt
             };
         }

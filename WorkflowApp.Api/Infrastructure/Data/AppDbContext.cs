@@ -42,8 +42,9 @@ namespace WorkflowApp.Api.Infrastructure.Data
                     .IsRequired();
 
                 entity.Property(x => x.Role)
-                    .IsRequired()
-                    .HasMaxLength(30);
+                    .HasConversion<string>()
+                    .HasMaxLength(30)
+                    .IsRequired();
 
                 entity.Property(x => x.IsActive)
                     .IsRequired();

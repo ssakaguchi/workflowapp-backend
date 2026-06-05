@@ -1,4 +1,5 @@
 ﻿using WorkflowApp.Api.Domain.Entities;
+using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.Infrastructure.Security;
 using WorkflowApp.Api.Tests.Helpers;
 
@@ -18,7 +19,7 @@ namespace WorkflowApp.Api.Tests.Infrastructure.Security
                 Id = 1,
                 LoginId = "testuser",
                 DisplayName = "Test User",
-                Role = "Applicant"
+                Role = UserRole.Applicant
             };
 
             // Act
@@ -29,7 +30,7 @@ namespace WorkflowApp.Api.Tests.Infrastructure.Security
             Assert.False(string.IsNullOrEmpty(result.Token));
             Assert.Equal(user.LoginId, result.LoginId);
             Assert.Equal(user.DisplayName, result.DisplayName);
-            Assert.Equal(user.Role, result.Role);
+            Assert.Equal(user.Role.ToString(), result.Role);
             Assert.True(result.ExpiresAt > DateTime.UtcNow);
         }
     }

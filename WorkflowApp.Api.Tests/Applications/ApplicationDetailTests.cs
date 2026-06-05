@@ -43,7 +43,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     LoginId = "applicant01",
                     DisplayName = "ログインユーザー",
                     PasswordHash = "dummy-hash",
-                    Role = "Applicant",
+                    Role = UserRole.Applicant,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -109,7 +109,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     LoginId = "applicant01",
                     DisplayName = "ログインユーザー",
                     PasswordHash = "dummy-hash",
-                    Role = "Applicant",
+                    Role = UserRole.Applicant,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -120,7 +120,7 @@ namespace WorkflowApp.Api.Tests.Applications
                     LoginId = "other01",
                     DisplayName = "他ユーザー",
                     PasswordHash = "dummy-hash",
-                    Role = "Applicant",
+                    Role = UserRole.Applicant,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
