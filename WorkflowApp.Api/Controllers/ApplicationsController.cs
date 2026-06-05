@@ -151,17 +151,19 @@ namespace WorkflowApp.Api.Controllers
         }
 
         /// <summary>
-        /// 申請のステータスを更新します。認証されたユーザーの申請のみが更新されます。
+        /// 申請のステータスを更新します。
+        /// 承認者のみがアクセスできるように、[Authorize(Roles = "Approver")] 属性を使用
         /// </summary>
         /// <param name="id">更新する申請のID</param>
         /// <param name="request">更新する申請の情報</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>更新結果</returns>
+        [Authorize(Roles = nameof(UserRole.Approver))]
         [HttpPatch("{id:int}/status")]
         public async Task<IActionResult> UpdateWorkflowStatus(int id, UpdateWorkflowStatusRequest request, CancellationToken cancellationToken)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out _))
             {
                 return Unauthorized();
             }
@@ -173,7 +175,7 @@ namespace WorkflowApp.Api.Controllers
                 return BadRequest("無効なステータスです。");
             }
 
-            var isUpdated = await _service.UpdateWorkflowStatusAsync(id, status, userId, cancellationToken);
+            var isUpdated = await _service.UpdateWorkflowStatusAsync(id, status, cancellationToken);
             if (!isUpdated)
             {
                 return NotFound();

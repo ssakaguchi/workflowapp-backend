@@ -162,17 +162,20 @@ namespace WorkflowApp.Api.Services
         }
 
         /// <summary>
-        /// ワークフローのステータスを非同期で更新します。更新は申請者本人のみが行えるように、ユーザーIDを確認します。
+        /// ワークフローのステータスを非同期で更新します。
+        /// 承認操作はコントローラー側の認可により、承認者のみ実行できます。
         /// </summary>
         /// <param name="id">更新する申請のID</param>
         /// <param name="status">更新するステータスの情報</param>
-        /// <param name="userId">申請者のユーザーID</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>更新が成功したかどうか</returns>
-        public async Task<bool> UpdateWorkflowStatusAsync(int id, WorkflowStatus status, int userId, CancellationToken cancellationToken)
+        public async Task<bool> UpdateWorkflowStatusAsync(int id,
+                                                          WorkflowStatus status,
+                                                          CancellationToken cancellationToken)
         {
-            var application = await _dbContext.Applications.FirstOrDefaultAsync(x => x.Id == id && x.ApplicantUserId == userId,
-                                                                                cancellationToken);
+            var application = await _dbContext.Applications
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            
             if (application == null)
             {
                 return false;
@@ -195,7 +198,7 @@ namespace WorkflowApp.Api.Services
         /// <param name="userId">フィルタリングするユーザーID</param>    
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>ページネーションされた申請の一覧</returns>
-        public async Task<PagedResponse<ApplicationListItemResponse>> GetApplicationsAsync( int page, int pageSize, string? status, int userId, CancellationToken cancellationToken)
+        public async Task<PagedResponse<ApplicationListItemResponse>> GetApplicationsAsync(int page, int pageSize, string? status, int userId, CancellationToken cancellationToken)
         {
             // クエリの初期化
             var query = _dbContext.Applications
