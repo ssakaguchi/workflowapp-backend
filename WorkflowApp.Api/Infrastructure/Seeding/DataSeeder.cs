@@ -92,7 +92,7 @@ namespace WorkflowApp.Api.Infrastructure.Seeding
 
             user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
-            await _dbContext.Users.AddAsync(user);
+            await _dbContext.Users.AddAsync(user, cancellationToken);
         }
 
         /// <summary>
