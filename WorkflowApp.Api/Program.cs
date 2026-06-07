@@ -90,6 +90,12 @@ using (var scope = app.Services.CreateScope())
 
     var seedDataEnabled = app.Configuration.GetValue<bool>("SeedData:Enabled");
 
+    if (seedDataEnabled && !app.Environment.IsDevelopment())
+    {
+        throw new InvalidOperationException(
+            "Seed data is enabled outside the Development environment.");
+    }
+
     if (app.Environment.IsDevelopment() && seedDataEnabled)
     {
         var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();

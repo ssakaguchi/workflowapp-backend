@@ -50,7 +50,7 @@ namespace WorkflowApp.Api.Infrastructure.Seeding
                 }
             }
 
-                await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>
