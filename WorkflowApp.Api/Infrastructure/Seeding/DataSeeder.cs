@@ -7,10 +7,6 @@ using WorkflowApp.Api.Infrastructure.Data;
 
 namespace WorkflowApp.Api.Infrastructure.Seeding
 {
-    public class SeedUserOptions
-    {
-        public List<SeedUser> Users { get; set; } = [];
-    }
 
     public class SeedUser
     {
