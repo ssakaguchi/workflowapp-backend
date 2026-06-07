@@ -1,9 +1,12 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Infrastructure.Data;
 using WorkflowApp.Api.Infrastructure.Security;
+using WorkflowApp.Api.Infrastructure.Seeding;
 using WorkflowApp.Api.Services;
 using WorkflowApp.Api.Services.Interfaces;
 
@@ -43,6 +46,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<DataSeeder>();
 
 // JWTの発行者、対象、シークレットキー、有効期限を設定
 var issuer = builder.Configuration["Jwt:Issuer"]
@@ -81,6 +86,20 @@ using (var scope = app.Services.CreateScope())
     if (dbContext.Database.IsRelational())
     {
         dbContext.Database.Migrate();
+    }
+
+    var seedDataEnabled = app.Configuration.GetValue<bool>("SeedData:Enabled");
+
+    if (seedDataEnabled && !app.Environment.IsDevelopment())
+    {
+        throw new InvalidOperationException(
+            "Seed data is enabled outside the Development environment.");
+    }
+
+    if (app.Environment.IsDevelopment() && seedDataEnabled)
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
+        await seeder.SeedAsync();
     }
 }
 
