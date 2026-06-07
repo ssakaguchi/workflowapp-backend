@@ -48,7 +48,6 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<DataSeeder>();
-builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 // JWTの発行者、対象、シークレットキー、有効期限を設定
 var issuer = builder.Configuration["Jwt:Issuer"]
