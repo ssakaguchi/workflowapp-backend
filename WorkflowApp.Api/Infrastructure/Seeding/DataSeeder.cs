@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
@@ -51,14 +50,7 @@ namespace WorkflowApp.Api.Infrastructure.Seeding
                 }
             }
 
-            try
-            {
                 await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
-            {
-                // 同時実行により既にSeedユーザーが作成された場合は何もしない
-            }
         }
 
         /// <summary>
@@ -90,17 +82,6 @@ namespace WorkflowApp.Api.Infrastructure.Seeding
             user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
             await _dbContext.Users.AddAsync(user, cancellationToken);
-        }
-
-        /// <summary>
-        /// DbUpdateExceptionが一意制約違反によるものかを判定する
-        /// </summary>
-        /// <param name="ex"></param>
-        /// <returns></returns>
-        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-        {
-            return ex.InnerException is SqliteException sqliteException
-                && sqliteException.SqliteErrorCode == 19;
         }
     }
 }
