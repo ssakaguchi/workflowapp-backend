@@ -80,6 +80,7 @@ namespace WorkflowApp.Api.Infrastructure.Seeding
             var user = new User
             {
                 LoginId = loginId,
+                DisplayName = loginId,
                 Role = role,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
