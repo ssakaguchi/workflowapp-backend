@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
@@ -37,6 +38,7 @@ namespace WorkflowApp.Api.Tests.Applications
             var client = _factory.CreateClient();
 
             int userId;
+            int approverId;
             string token;
 
             using (var scope = _factory.Services.CreateScope())
@@ -56,10 +58,24 @@ namespace WorkflowApp.Api.Tests.Applications
                     UpdatedAt = DateTime.UtcNow
                 };
 
+                // テスト承認者の作成
+                var approver = new User
+                {
+                    LoginId = $"approver-{Guid.NewGuid()}",
+                    DisplayName = "テスト承認者",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Approver,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
                 dbContext.Users.Add(user);
+                dbContext.Users.Add(approver);
                 await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
                 userId = user.Id;
+                approverId = approver.Id;
 
                 token = jwtTokenService.CreateToken(user).Token;
             }
@@ -89,11 +105,22 @@ namespace WorkflowApp.Api.Tests.Applications
             using var verfyScope = _factory.Services.CreateScope();
             var verifyDbContext = verfyScope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            var savedApplication = verifyDbContext.Applications.Single();
+            var savedApplication = verifyDbContext.Applications
+                .Include(a => a.ApprovalSteps)
+                .Single();
+
             savedApplication.Title.Should().Be(request.Title);
             savedApplication.Content.Should().Be(request.Content);
             savedApplication.ApplicantUserId.Should().Be(userId);
             savedApplication.Status.Should().Be(WorkflowStatus.Pending);
+
+
+            savedApplication.ApprovalSteps.Should().HaveCount(1);
+
+            var approvalStep = savedApplication.ApprovalSteps.Single();
+            approvalStep.StepOrder.Should().Be(1);
+            approvalStep.Status.Should().Be(ApprovalStepStatus.Pending);
+            approvalStep.ApproverUserId.Should().Be(approverId);
         }
 
         [Fact]

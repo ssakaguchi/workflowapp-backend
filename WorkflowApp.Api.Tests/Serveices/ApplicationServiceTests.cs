@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Infrastructure.Data;
@@ -18,6 +19,20 @@ namespace WorkflowApp.Api.Tests.Serveices
 
             await using var dbContext = new AppDbContext(options);
             var service = new ApplicationService(dbContext);
+
+            var approver = new User
+            {
+                LoginId = "approver01",
+                DisplayName = "テスト承認者",
+                PasswordHash = "dummy-hash",
+                Role = UserRole.Approver,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            dbContext.Users.Add(approver);
+            await dbContext.SaveChangesAsync(CancellationToken.None);
 
             var request = new CreateApplicationRequest
             {
@@ -45,6 +60,16 @@ namespace WorkflowApp.Api.Tests.Serveices
 
             // CreatedAtが過去1分以内であることを確認
             Assert.True(savedApplication.CreatedAt > DateTime.UtcNow.AddMinutes(-1));
+
+
+            // 承認ステップが正しく保存されていることを確認
+            Assert.Single(savedApplication.ApprovalSteps);
+
+            // 承認ステップの内容を確認
+            var approvalStep = savedApplication.ApprovalSteps.Single();
+            Assert.Equal(1, approvalStep.StepOrder);
+            Assert.Equal(approver.Id, approvalStep.ApproverUserId);
+            Assert.Equal(ApprovalStepStatus.Pending, approvalStep.Status);
         }
 
         [Fact]
@@ -64,7 +89,7 @@ namespace WorkflowApp.Api.Tests.Serveices
                 Title = "   ",
                 Content = "内容"
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 service.CreateAsync(request, 1, CancellationToken.None));
