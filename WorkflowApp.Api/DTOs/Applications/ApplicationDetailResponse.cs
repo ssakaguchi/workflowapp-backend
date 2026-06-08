@@ -8,6 +8,6 @@
         public string Status { get; set; } = string.Empty;
         public int ApplicantUserId { get; set; }
         public DateTime CreatedAt { get; set; }
-
+        public List<ApprovalStepResponse> ApprovalSteps { get; set; } = new List<ApprovalStepResponse>();
     }
 }

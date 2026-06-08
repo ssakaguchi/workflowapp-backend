@@ -37,12 +37,32 @@ namespace WorkflowApp.Api.Services
                 throw new ArgumentException("申請内容は必須です。", nameof(request.Content));
             }
 
+            var approver = await _dbContext.Users
+                .Where(u => u.Role == UserRole.Approver && u.IsActive)
+                .OrderBy(u => u.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (approver is null)
+            {
+                throw new InvalidOperationException("承認者が存在しません。");
+            }
+
             var application = new Application
             {
                 Title = title,
                 Content = content,
                 ApplicantUserId = userId,
                 CreatedAt = DateTime.UtcNow,
+                ApprovalSteps = new List<ApprovalStep>
+                {
+                    new ApprovalStep
+                    {
+                        StepOrder = 1,
+                        ApproverUserId = approver.Id,
+                        Status = ApprovalStepStatus.Pending,
+                        Comment = content,
+                    }
+                 }
             };
 
 
@@ -91,22 +111,42 @@ namespace WorkflowApp.Api.Services
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>申請の詳細情報</returns>
         public async Task<ApplicationDetailResponse?> GetDetailAsync(int applicationId,
-                                                               int userId,
-                                                               CancellationToken cancellationToken)
+                                                                     int userId,
+                                                                     CancellationToken cancellationToken)
         {
             return await _dbContext.Applications
-                .Where(x => x.Id == applicationId && x.ApplicantUserId == userId)
-                .Select(x => new ApplicationDetailResponse
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Content = x.Content,
-                    Status = x.Status.ToString(),
-                    ApplicantUserId = x.ApplicantUserId,
-                    CreatedAt = x.CreatedAt
-                })
-                // 必ず1件か0件の結果が返ることを期待しているため、SingleOrDefaultAsyncを使用しています。
-                .SingleOrDefaultAsync(cancellationToken);
+                .Where(a =>
+                    a.Id == applicationId &&
+                    // 申請者本人または承認者であれば、申請の詳細を取得できるようにします。
+                    (
+                        a.ApplicantUserId == userId ||
+                        a.ApprovalSteps.Any(s => s.ApproverUserId == userId)
+                    ))
+                    // 申請の詳細を取得する際に、関連する承認ステップも一緒に取得します。cd 
+                    .Select(a => new ApplicationDetailResponse
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        Content = a.Content,
+                        Status = a.Status.ToString(),
+                        ApplicantUserId = a.ApplicantUserId,
+                        CreatedAt = a.CreatedAt,
+                        ApprovalSteps = a.ApprovalSteps
+                            .OrderBy(s => s.StepOrder)
+                            .Select(s => new ApprovalStepResponse
+                            {
+                                Id = s.Id,
+                                StepOrder = s.StepOrder,
+                                ApproverUserId = s.ApproverUserId,
+                                ApproverName = s.ApproverUser.DisplayName,
+                                Status = s.Status.ToString(),
+                                ApprovedAt = s.ApprovedAt,
+                                Comment = s.Comment
+                            })
+                            .ToList()
+                    })
+                    // 必ず1件か0件の結果が返ることを期待しているため、SingleOrDefaultAsyncを使用しています。
+                    .SingleOrDefaultAsync(cancellationToken);
         }
 
         /// <summary>
@@ -130,7 +170,7 @@ namespace WorkflowApp.Api.Services
             }
 
             _dbContext.Applications.Remove(application);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return true;
         }
@@ -175,7 +215,7 @@ namespace WorkflowApp.Api.Services
         {
             var application = await _dbContext.Applications
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-            
+
             if (application == null)
             {
                 return false;
@@ -202,7 +242,8 @@ namespace WorkflowApp.Api.Services
         {
             // クエリの初期化
             var query = _dbContext.Applications
-                .Where(x => x.ApplicantUserId == userId)
+                .Where(x => x.ApplicantUserId == userId ||
+                            x.ApprovalSteps.Any(s => s.ApproverUserId.Equals(userId)))
                 .AsQueryable();
 
             // 無効なステータスが指定された場合は、フィルタリングを行わない

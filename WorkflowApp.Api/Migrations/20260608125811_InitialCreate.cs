@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WorkflowApp.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddApplications : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,6 +48,47 @@ namespace WorkflowApp.Api.Migrations
                     table.PrimaryKey("PK_User", x => x.Id);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ApprovalSteps",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ApplicationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    StepOrder = table.Column<int>(type: "INTEGER", nullable: false),
+                    ApproverUserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Status = table.Column<string>(type: "TEXT", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Comment = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApprovalSteps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ApprovalSteps_Applications_ApplicationId",
+                        column: x => x.ApplicationId,
+                        principalTable: "Applications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ApprovalSteps_User_ApproverUserId",
+                        column: x => x.ApproverUserId,
+                        principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApprovalSteps_ApplicationId_StepOrder",
+                table: "ApprovalSteps",
+                columns: new[] { "ApplicationId", "StepOrder" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApprovalSteps_ApproverUserId",
+                table: "ApprovalSteps",
+                column: "ApproverUserId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_User_LoginId",
                 table: "User",
@@ -58,6 +99,9 @@ namespace WorkflowApp.Api.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ApprovalSteps");
+
             migrationBuilder.DropTable(
                 name: "Applications");
 

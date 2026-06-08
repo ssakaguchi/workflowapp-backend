@@ -49,6 +49,42 @@ namespace WorkflowApp.Api.Migrations
                     b.ToTable("Applications");
                 });
 
+            modelBuilder.Entity("WorkflowApp.Api.Domain.Entities.ApprovalStep", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ApproverUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StepOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverUserId");
+
+                    b.HasIndex("ApplicationId", "StepOrder")
+                        .IsUnique();
+
+                    b.ToTable("ApprovalSteps");
+                });
+
             modelBuilder.Entity("WorkflowApp.Api.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -89,6 +125,30 @@ namespace WorkflowApp.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("User", (string)null);
+                });
+
+            modelBuilder.Entity("WorkflowApp.Api.Domain.Entities.ApprovalStep", b =>
+                {
+                    b.HasOne("WorkflowApp.Api.Domain.Entities.Application", "Application")
+                        .WithMany("ApprovalSteps")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WorkflowApp.Api.Domain.Entities.User", "ApproverUser")
+                        .WithMany()
+                        .HasForeignKey("ApproverUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+
+                    b.Navigation("ApproverUser");
+                });
+
+            modelBuilder.Entity("WorkflowApp.Api.Domain.Entities.Application", b =>
+                {
+                    b.Navigation("ApprovalSteps");
                 });
 #pragma warning restore 612, 618
         }
