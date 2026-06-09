@@ -85,7 +85,7 @@ namespace WorkflowApp.Api.Infrastructure.Data
                 .HasForeignKey(s => s.ApproverUserId)
                 .OnDelete(DeleteBehavior.Restrict);     // Userが削除されても承認ステップを削除しない
 
-            // ApprovalStepエンティティのStatusプロパティに対して、ApprovalStatus列挙型を文字列として保存するように変換を設定
+            // ApprovalStepエンティティのStatusプロパティに対して、ApprovalStepStatus列挙型を文字列として保存するように変換を設定
             modelBuilder.Entity<ApprovalStep>(entity =>
             {
                 entity.Property(x => x.Status)
