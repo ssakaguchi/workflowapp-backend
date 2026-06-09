@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkflowApp.Api.CustomException;
 using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
 using WorkflowApp.Api.Services.Interfaces;
@@ -31,21 +32,27 @@ namespace WorkflowApp.Api.Controllers
         public async Task<IActionResult> Create([FromBody] CreateApplicationRequest request,
                                                         CancellationToken none)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            try
             {
-                return Unauthorized();
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _service.CreateAsync(request,
+                                                        userId,
+                                                        none);
+
+                return CreatedAtAction(nameof(Create),
+                                       new { id = result.Id },
+                                       result);
             }
-
-            var result = await _service.CreateAsync(request,
-                                                           userId,
-                                                           none);
-
-
-            return CreatedAtAction(nameof(Create),
-                                   new { id = result.Id },
-                                   result);
+            catch (ApproverNotFoundException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         /// <summary>

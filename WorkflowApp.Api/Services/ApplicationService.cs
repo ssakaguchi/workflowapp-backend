@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using WorkflowApp.Api.CustomException;
 using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
 using WorkflowApp.Api.DTOs.Applications;
@@ -44,7 +45,7 @@ namespace WorkflowApp.Api.Services
 
             if (approver is null)
             {
-                throw new InvalidOperationException("承認者が存在しません。");
+                throw new ApproverNotFoundException();
             }   
 
             var application = new Application
