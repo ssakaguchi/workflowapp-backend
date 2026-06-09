@@ -122,7 +122,7 @@ namespace WorkflowApp.Api.Services
                         a.ApplicantUserId == userId ||
                         a.ApprovalSteps.Any(s => s.ApproverUserId == userId)
                     ))
-                    // 申請の詳細を取得する際に、関連する承認ステップも一緒に取得します。cd 
+                    // 申請の詳細を取得する際に、関連する承認ステップも一緒に取得します。
                     .Select(a => new ApplicationDetailResponse
                     {
                         Id = a.Id,
