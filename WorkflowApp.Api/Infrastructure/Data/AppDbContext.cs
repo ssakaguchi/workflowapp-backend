@@ -20,6 +20,9 @@ namespace WorkflowApp.Api.Infrastructure.Data
         // ワークフロー申請のDbSetを追加   
         public DbSet<Application> Applications => Set<Application>();
 
+        // 承認ステップのDbSetを追加
+        public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -67,6 +70,33 @@ namespace WorkflowApp.Api.Infrastructure.Data
                     .HasConversion<string>()
                     .IsRequired();
             });
+
+            // 申請と承認ステップの関連の設定
+            modelBuilder.Entity<Application>()
+                .HasMany(a => a.ApprovalSteps)          // Applicationは複数のApprovalStepを持ち、ApprovalStepは1つのApplicationに属する
+                .WithOne(s => s.Application)
+                .HasForeignKey(s => s.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);      // 申請を削除したら、紐づく承認ステップも削除する
+
+            // 承認ステップと承認者ユーザーの関連の設定
+            modelBuilder.Entity<ApprovalStep>()
+                .HasOne(s => s.ApproverUser)            // ApprovalStepは承認者Userを1人持つ
+                .WithMany()
+                .HasForeignKey(s => s.ApproverUserId)
+                .OnDelete(DeleteBehavior.Restrict);     // Userが削除されても承認ステップを削除しない
+
+            // ApprovalStepエンティティのStatusプロパティに対して、ApprovalStepStatus列挙型を文字列として保存するように変換を設定
+            modelBuilder.Entity<ApprovalStep>(entity =>
+            {
+                entity.Property(x => x.Status)
+                    .HasConversion<string>()
+                    .IsRequired();
+            });
+
+            // ApplicationIdとStepOrderの組み合わせに対して一意制約を設定
+            modelBuilder.Entity<ApprovalStep>()
+                .HasIndex(s => new { s.ApplicationId, s.StepOrder })
+                .IsUnique();
         }
     }
 }

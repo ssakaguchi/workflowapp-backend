@@ -14,5 +14,6 @@ namespace WorkflowApp.Api.Domain.Entities
         public int ApplicantUserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public List<ApprovalStep> ApprovalSteps { get; set; } = new();
     }
 }
