@@ -45,7 +45,7 @@ namespace WorkflowApp.Api.Services
             if (approver is null)
             {
                 throw new InvalidOperationException("承認者が存在しません。");
-            }
+            }   
 
             var application = new Application
             {
@@ -53,6 +53,7 @@ namespace WorkflowApp.Api.Services
                 Content = content,
                 ApplicantUserId = userId,
                 CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 ApprovalSteps = new List<ApprovalStep>
                 {
                     new ApprovalStep
