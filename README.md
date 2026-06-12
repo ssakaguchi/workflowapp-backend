@@ -472,3 +472,5 @@ dotnet test
 - 申請削除
 - 認証ユーザーごとのデータ分離
 - 入力不正時や対象データ未存在時のレスポンス
+
+[![CI](https://github.com/ssakaguchi/workflowapp-backend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ssakaguchi/workflowapp-backend/actions/workflows/ci.yml)
