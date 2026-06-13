@@ -16,5 +16,8 @@ namespace WorkflowApp.Api.DTOs.Applications
         [MinLength(1, ErrorMessage = "内容は必須です。")]
         [MaxLength(2000, ErrorMessage = "申請内容は2000文字以内で入力してください。")]
         public string Content { get; set; } = string.Empty;
+
+        [Range(1, int.MaxValue, ErrorMessage = "承認者を選択してください。")]
+        public int ApproverUserId { get; set; }
     }
 }
