@@ -42,7 +42,6 @@ namespace WorkflowApp.Api.Services
                 .Where(u => u.Id == request.ApproverUserId
                          && u.Role == UserRole.Approver
                          && u.IsActive)
-                .OrderBy(u => u.Id)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (approver is null)
