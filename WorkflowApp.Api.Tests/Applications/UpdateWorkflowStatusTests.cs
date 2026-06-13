@@ -363,7 +363,7 @@ namespace WorkflowApp.Api.Tests.Applications
         /// <summary>
         /// 承認ステップのリストを作成するユーティリティメソッド
         /// </summary>
-        /// <param name="loginUser">ログインユーザー</param>
+        /// <param name="approverUserId">承認者のユーザーID</param>
         /// <param name="stepOrder">ステップの順序</param>
         /// <param name="status">承認ステップのステータス</param>
         /// <returns>作成された承認ステップのリスト</returns>
