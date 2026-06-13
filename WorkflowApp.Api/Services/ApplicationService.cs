@@ -39,14 +39,15 @@ namespace WorkflowApp.Api.Services
             }
 
             var approver = await _dbContext.Users
-                .Where(u => u.Role == UserRole.Approver && u.IsActive)
-                .OrderBy(u => u.Id)
+                .Where(u => u.Id == request.ApproverUserId
+                         && u.Role == UserRole.Approver
+                         && u.IsActive)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (approver is null)
             {
                 throw new ApproverNotFoundException();
-            }   
+            }
 
             var application = new Application
             {
@@ -209,10 +210,12 @@ namespace WorkflowApp.Api.Services
         /// </summary>
         /// <param name="id">更新する申請のID</param>
         /// <param name="status">更新するステータスの情報</param>
+        /// <param name="currentUserId">現在のユーザーID</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>更新が成功したかどうか</returns>
         public async Task<bool> UpdateWorkflowStatusAsync(int id,
                                                           WorkflowStatus status,
+                                                          int currentUserId,
                                                           CancellationToken cancellationToken)
         {
             var application = await _dbContext.Applications
@@ -223,8 +226,38 @@ namespace WorkflowApp.Api.Services
                 return false;
             }
 
+            if (status is not (WorkflowStatus.Approved or WorkflowStatus.Rejected))
+            {
+                throw new InvalidOperationException("承認または却下のみ指定できます。");
+            }
+
+            var pendingStep = await _dbContext.ApprovalSteps
+                .SingleOrDefaultAsync(x =>
+                    x.ApplicationId == id &&
+                    x.Status == ApprovalStepStatus.Pending,
+                    cancellationToken);
+
+            if (pendingStep is null)
+            {
+                throw new InvalidOperationException("承認待ちのワークフローが存在しません。");
+            }
+
+            if (pendingStep.ApproverUserId != currentUserId)
+            {
+                throw new ApprovalPermissionDeniedException();
+            }
+
             application.Status = status;
-            application.UpdatedAt = DateTime.UtcNow;
+
+            var now = DateTime.UtcNow;
+
+            application.UpdatedAt = now;
+
+            pendingStep.Status = status == WorkflowStatus.Approved
+                ? ApprovalStepStatus.Approved
+                : ApprovalStepStatus.Rejected;
+
+            pendingStep.ApprovedAt = now;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 

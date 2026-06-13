@@ -44,6 +44,8 @@ namespace WorkflowApp.Api.Tests.Applications
         [Theory]
         [InlineData("")]
         [InlineData("InvalidStatus")]
+        [InlineData("Pending")]
+        [InlineData("Remanded")]
         public async Task 無効なステータスの場合は400BadRequestを返す(string invalidStatus)
         {
             // Arrange
@@ -60,8 +62,11 @@ namespace WorkflowApp.Api.Tests.Applications
                 // テストユーザーの作成
                 var loginUser = await CreateUserAsync(dbContext, "approver01", "テスト承認者", UserRole.Approver);
 
+                // 承認ステップの作成
+                var approvalSteps = CreateApprovalSteps(loginUser.Id, stepOrder: 1, status: ApprovalStepStatus.Pending);
+
                 // テスト申請の作成
-                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending);
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending, approvalSteps);
 
                 applicationId = application.Id;
                 token = jwtTokenService.CreateToken(loginUser).Token;
@@ -125,8 +130,11 @@ namespace WorkflowApp.Api.Tests.Applications
                 // テストユーザーの作成
                 var loginUser = await CreateUserAsync(dbContext, "applicant01", "テスト申請者", UserRole.Applicant);
 
+                // 承認ステップの作成
+                var approvalSteps = CreateApprovalSteps(loginUser.Id, stepOrder: 1, status: ApprovalStepStatus.Pending);
+
                 // テスト申請の作成
-                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", loginUser.Id, WorkflowStatus.Pending);
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", loginUser.Id, WorkflowStatus.Pending, approvalSteps);
 
                 applicationId = application.Id;
                 token = jwtTokenService.CreateToken(loginUser).Token;
@@ -159,8 +167,11 @@ namespace WorkflowApp.Api.Tests.Applications
                 // テストユーザーの作成
                 var loginUser = await CreateUserAsync(dbContext, "approver01", "テスト承認者", UserRole.Approver);
 
+                // 承認ステップの作成
+                var approvalSteps = CreateApprovalSteps(loginUser.Id, stepOrder: 1, status: ApprovalStepStatus.Pending);
+
                 // テスト申請の作成
-                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending);
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending, approvalSteps);
 
                 applicationId = application.Id;
                 token = jwtTokenService.CreateToken(loginUser).Token;
@@ -183,6 +194,89 @@ namespace WorkflowApp.Api.Tests.Applications
 
             Assert.NotNull(updatedApplication);
             Assert.Equal(WorkflowStatus.Approved, updatedApplication.Status);
+
+            // 承認ステップのステータスも更新されていることを確認
+            var updatedStep = await verifyDbContext.ApprovalSteps
+                .SingleAsync(x => x.ApplicationId == applicationId, TestContext.Current.CancellationToken);
+
+            updatedStep.Status.Should().Be(ApprovalStepStatus.Approved);
+            updatedStep.ApprovedAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task 承認待ちのワークフローが存在しない場合_400BadRequestを返す()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            int applicationId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+                // テストユーザーの作成
+                var loginUser = await CreateUserAsync(dbContext, "approver01", "テスト承認者", UserRole.Approver);
+
+                // 承認ステップの作成 - 承認待ちのステップが存在しない状態を作るため、Rejectedに設定
+                var approvalSteps = CreateApprovalSteps(loginUser.Id, stepOrder: 1, status: ApprovalStepStatus.Rejected);
+
+                // テスト申請の作成
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending, approvalSteps);
+
+                applicationId = application.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var response = await PatchStatusAsync(client, applicationId, WorkflowStatus.Approved.ToString());
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+
+        [Fact]
+        public async Task 承認要求があった申請を承認する権限がないユーザーの場合_403Forbiddenを返す()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            int applicationId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+                // テストユーザーの作成
+                var loginUser = await CreateUserAsync(dbContext, $"approver-{Guid.NewGuid()}", "ログイン承認者", UserRole.Approver);
+                var assignedApprover = await CreateUserAsync(dbContext, $"approver-{Guid.NewGuid()}", "担当承認者", UserRole.Approver);
+
+                // 承認ステップの作成 - 承認要求はあるが、承認者が異なるユーザーを設定
+                var approvalSteps = CreateApprovalSteps(assignedApprover.Id, stepOrder: 1, status: ApprovalStepStatus.Pending);
+
+                // テスト申請の作成
+                var application = await CreateApplicationAsync(dbContext, "出張申請", "大阪出張", 999, WorkflowStatus.Pending, approvalSteps);
+
+                applicationId = application.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var response = await PatchStatusAsync(client, applicationId, WorkflowStatus.Approved.ToString());
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #region ユーティリティメソッド
@@ -222,19 +316,22 @@ namespace WorkflowApp.Api.Tests.Applications
         /// <param name="content">申請の内容</param>
         /// <param name="applicantUserId">申請者のユーザーID</param>
         /// <param name="status">申請のステータス</param>
+        /// <param name="approvalStep">承認ステップのリスト</param>
         /// <returns>作成された申請オブジェクト</returns>
         private static async Task<Application> CreateApplicationAsync(AppDbContext dbContext,
                                                                       string title,
                                                                       string content,
                                                                       int applicantUserId,
-                                                                      WorkflowStatus status)
+                                                                      WorkflowStatus status,
+                                                                      List<ApprovalStep> approvalStep)
         {
             var application = new Application
             {
                 Title = title,
                 Content = content,
                 ApplicantUserId = applicantUserId,
-                Status = status
+                Status = status,
+                ApprovalSteps = approvalStep
             };
 
             dbContext.Applications.Add(application);
@@ -261,6 +358,26 @@ namespace WorkflowApp.Api.Tests.Applications
                 $"/api/applications/{applicationId}/status",
                 request,
                 TestContext.Current.CancellationToken);
+        }
+
+        /// <summary>
+        /// 承認ステップのリストを作成するユーティリティメソッド
+        /// </summary>
+        /// <param name="approverUserId">承認者のユーザーID</param>
+        /// <param name="stepOrder">ステップの順序</param>
+        /// <param name="status">承認ステップのステータス</param>
+        /// <returns>作成された承認ステップのリスト</returns>
+        private static List<ApprovalStep> CreateApprovalSteps(int approverUserId, int stepOrder, ApprovalStepStatus status)
+        {
+            return new List<ApprovalStep>
+                {
+                    new ApprovalStep
+                    {
+                        StepOrder = stepOrder,
+                        ApproverUserId = approverUserId,
+                        Status = status,
+                    }
+                };
         }
 
         #endregion

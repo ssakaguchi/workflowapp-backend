@@ -170,7 +170,7 @@ namespace WorkflowApp.Api.Controllers
         public async Task<IActionResult> UpdateWorkflowStatus(int id, UpdateWorkflowStatusRequest request, CancellationToken cancellationToken)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out _))
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int currentUserId))
             {
                 return Unauthorized();
             }
@@ -182,10 +182,21 @@ namespace WorkflowApp.Api.Controllers
                 return BadRequest("無効なステータスです。");
             }
 
-            var isUpdated = await _service.UpdateWorkflowStatusAsync(id, status, cancellationToken);
-            if (!isUpdated)
+            try
             {
-                return NotFound();
+                var isUpdated = await _service.UpdateWorkflowStatusAsync(id, status, currentUserId, cancellationToken);
+                if (!isUpdated)
+                {
+                    return NotFound();
+                }
+            }
+            catch (ApprovalPermissionDeniedException)
+            {
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
 
             return NoContent();

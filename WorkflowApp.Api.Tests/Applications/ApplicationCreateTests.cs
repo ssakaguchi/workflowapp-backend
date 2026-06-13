@@ -86,6 +86,7 @@ namespace WorkflowApp.Api.Tests.Applications
             {
                 Title = "テスト申請",
                 Content = "これはテストの申請です。",
+                ApproverUserId = approverId
             };
 
             // Act
@@ -132,6 +133,7 @@ namespace WorkflowApp.Api.Tests.Applications
             {
                 Title = "テスト申請",
                 Content = "これはテストの申請です。",
+                ApproverUserId = 1
             };
             // Act
             var response = await client.PostAsJsonAsync("/api/applications",
@@ -149,11 +151,12 @@ namespace WorkflowApp.Api.Tests.Applications
             string token = await this.CreateAccessTokenAsync();
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            
+
             var request = new
             {
-                Title =　"", // タイトルが空
+                Title = "", // タイトルが空
                 Content = "これはテストの申請です。",
+                ApproverUserId = 1
             };
 
             // Act
@@ -184,6 +187,7 @@ namespace WorkflowApp.Api.Tests.Applications
             {
                 Title = "テスト申請",
                 Content = "", // コンテンツが空
+                ApproverUserId = 1
             };
 
             // Act
@@ -213,7 +217,8 @@ namespace WorkflowApp.Api.Tests.Applications
             var request = new
             {
                 Title = new string('あ', 101),   // タイトルが101文字
-                Content = "4月10日の東京出張について申請します。"
+                Content = "4月10日の東京出張について申請します。",
+                ApproverUserId = 1
             };
 
             // Act
@@ -243,7 +248,8 @@ namespace WorkflowApp.Api.Tests.Applications
             var request = new
             {
                 Title = "出張申請",
-                Content = new string('あ', 2001) // コンテンツが2001文字
+                Content = new string('あ', 2001), // コンテンツが2001文字
+                ApproverUserId = 1
             };
 
             // Act
@@ -259,7 +265,38 @@ namespace WorkflowApp.Api.Tests.Applications
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             dbContext.Applications.Should().BeEmpty();
         }
-        
+
+        [Fact]
+        public async Task Post_承認者IDが未指定の場合_400BadRequestを返すこと()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            var token = await CreateAccessTokenAsync();
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var request = new
+            {
+                Title = "出張申請",
+                Content = "4月10日の東京出張について申請します。"
+                // ApproverIDを未指定
+            };
+
+            // Act
+            var response = await client.PostAsJsonAsync("/api/applications",
+                                                        request,
+                                                        cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+            // DBに保存されていないことを確認
+            using var scope = _factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.Applications.Should().BeEmpty();
+        }
+
 
         /// <summary>
         /// トークンを作成するヘルパーメソッド

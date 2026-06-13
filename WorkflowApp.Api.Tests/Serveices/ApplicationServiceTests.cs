@@ -37,7 +37,8 @@ namespace WorkflowApp.Api.Tests.Serveices
             var request = new CreateApplicationRequest
             {
                 Title = "出張申請",
-                Content = "4月10日の東京出張について申請します。"
+                Content = "4月10日の東京出張について申請します。",
+                ApproverUserId = approver.Id
             };
 
             var userId = 1;
@@ -52,6 +53,7 @@ namespace WorkflowApp.Api.Tests.Serveices
 
             Assert.Equal(request.Title, savedApplication.Title);
             Assert.Equal(request.Content, savedApplication.Content);
+            Assert.Equal(request.ApproverUserId, savedApplication.ApprovalSteps.Single().ApproverUserId);
             Assert.Equal(WorkflowStatus.Pending, savedApplication.Status);
             Assert.Equal(userId, savedApplication.ApplicantUserId);
 
