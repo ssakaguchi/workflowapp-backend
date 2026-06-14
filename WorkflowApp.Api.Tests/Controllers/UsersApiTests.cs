@@ -110,14 +110,13 @@ namespace WorkflowApp.Api.Tests.Controllers
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            var me = await response.Content.ReadFromJsonAsync<List<GetApproverResponse>>(
+            var approvers = await response.Content.ReadFromJsonAsync<List<GetApproverResponse>>(
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.NotNull(me);
-            Assert.True(me.Count > 0);
-            Assert.Equal(approverUserId, me[0].UserId);
-            Assert.Equal(approverDisplayName, me[0].DisplayName);
-        }
+            Assert.NotNull(approvers);
+            Assert.True(approvers.Count > 0);
+            Assert.Equal(approverUserId, approvers[0].UserId);
+            Assert.Equal(approverDisplayName, approvers[0].DisplayName);
 
         [Fact]
         public async Task GetApproversAsync_承認者が存在しない場合はNotFoundを返すこと()
