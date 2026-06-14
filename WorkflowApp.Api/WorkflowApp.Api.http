@@ -47,3 +47,8 @@ Content-Type: application/json
 ### get applications
 GET {{WorkflowApp.Api_HostAddress}}/api/applications?page=1&pageSize=10
 Authorization: Bearer {{token}}
+
+
+### get approvers
+GET {{WorkflowApp.Api_HostAddress}}/api/users/approvers
+Authorization: Bearer {{token}}
