@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WorkflowApp.Api.Domain.Entities;
 using WorkflowApp.Api.Domain.Enums;
@@ -17,6 +18,14 @@ namespace WorkflowApp.Api.Tests.Controllers
         public UsersApiTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+
+            // 各テストの前にテスト用DBのユーザーデータをクリーンアップする
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                dbContext.Users.RemoveRange(dbContext.Users);
+                dbContext.SaveChanges();
+            }
         }
 
 
