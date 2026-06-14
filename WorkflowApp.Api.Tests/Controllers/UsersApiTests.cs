@@ -117,6 +117,7 @@ namespace WorkflowApp.Api.Tests.Controllers
             Assert.True(approvers.Count > 0);
             Assert.Equal(approverUserId, approvers[0].UserId);
             Assert.Equal(approverDisplayName, approvers[0].DisplayName);
+        }
 
         [Fact]
         public async Task GetApproversAsync_承認者が存在しない場合はNotFoundを返すこと()

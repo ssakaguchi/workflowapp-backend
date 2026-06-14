@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WorkflowApp.Api.CustomException;
 using WorkflowApp.Api.Services.Interfaces;
 
 namespace WorkflowApp.Api.Controllers
@@ -26,20 +25,13 @@ namespace WorkflowApp.Api.Controllers
         [HttpGet("approvers")]
         public async Task<IActionResult> GetApprovers(CancellationToken cancellationToken)
         {
-            try
+            var result = await _service.GetApproversAsync(cancellationToken);
+            if (result == null || result.Count == 0)
             {
-                var result = await _service.GetApproversAsync(cancellationToken);
-                if (result == null || result.Count == 0)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                return Ok(result);
-            }
-            catch (ApproverNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+            return Ok(result);
         }
     }
 }
