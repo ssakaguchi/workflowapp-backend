@@ -14,7 +14,8 @@ namespace WorkflowApp.Api.Tests.Serveices
             // Arrange
             var user = CreateClaimsPrincipal(
                 new Claim(ClaimTypes.Name, "testuser"),
-                new Claim("displayName", "Test User"));
+                new Claim("displayName", "Test User"),
+                new Claim(ClaimTypes.Role, "User"));
 
             // Act
             var result = _sut.GetCurrentUser(user);
@@ -29,7 +30,8 @@ namespace WorkflowApp.Api.Tests.Serveices
             // Arrange
             var user = CreateClaimsPrincipal(
                 new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim("displayName", "Test User"));
+                new Claim("displayName", "Test User"),
+                new Claim(ClaimTypes.Role, "User"));
 
             // Act
             var result = _sut.GetCurrentUser(user);
@@ -45,7 +47,8 @@ namespace WorkflowApp.Api.Tests.Serveices
             var user = CreateClaimsPrincipal(
                 new Claim(ClaimTypes.NameIdentifier, "abc"),
                 new Claim(ClaimTypes.Name, "testuser"),
-                new Claim("displayName", "Test User"));
+                new Claim("displayName", "Test User"),
+                new Claim(ClaimTypes.Role, "User"));
 
             // Act
             var result = _sut.GetCurrentUser(user);
@@ -60,7 +63,10 @@ namespace WorkflowApp.Api.Tests.Serveices
             // Arrange
             var user = CreateClaimsPrincipal(
                 new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim(ClaimTypes.Name, "testuser"));
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim("displayName", string.Empty),
+                new Claim(ClaimTypes.Role, "User")
+                );
 
             // Act
             var result = _sut.GetCurrentUser(user);
@@ -70,6 +76,7 @@ namespace WorkflowApp.Api.Tests.Serveices
             Assert.Equal(1, result.UserId);
             Assert.Equal("testuser", result.LoginId);
             Assert.Equal(string.Empty, result.DisplayName);
+            Assert.Equal("User", result.Role);
         }
 
         [Fact]
@@ -79,7 +86,8 @@ namespace WorkflowApp.Api.Tests.Serveices
             var user = CreateClaimsPrincipal(
                 new Claim(ClaimTypes.NameIdentifier, "1"),
                 new Claim(ClaimTypes.Name, "testuser"),
-                new Claim("displayName", "Test User"));
+                new Claim("displayName", "Test User"),
+                new Claim(ClaimTypes.Role, "User"));
 
             // Act
             var result = _sut.GetCurrentUser(user);
@@ -89,6 +97,7 @@ namespace WorkflowApp.Api.Tests.Serveices
             Assert.Equal(1, result.UserId);
             Assert.Equal("testuser", result.LoginId);
             Assert.Equal("Test User", result.DisplayName);
+            Assert.Equal("User", result.Role);
         }
 
         /// <summary>

@@ -11,10 +11,12 @@ namespace WorkflowApp.Api.Services
             var userIdValue = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var loginId = user.FindFirst(ClaimTypes.Name)?.Value;
             var displayName = user.FindFirst("displayName")?.Value;
+            var role = user.FindFirst(ClaimTypes.Role)?.Value;
 
             if (string.IsNullOrWhiteSpace(userIdValue) ||
                 string.IsNullOrWhiteSpace(loginId) ||
-                !int.TryParse(userIdValue, out var userId))
+                !int.TryParse(userIdValue, out var userId) ||
+                string.IsNullOrWhiteSpace(role))
             {
                 return null;
             }
@@ -23,7 +25,8 @@ namespace WorkflowApp.Api.Services
             {
                 UserId = userId,
                 LoginId = loginId,
-                DisplayName = displayName ?? string.Empty
+                DisplayName = displayName ?? string.Empty,
+                Role = role ?? string.Empty
             };
         }
     }
