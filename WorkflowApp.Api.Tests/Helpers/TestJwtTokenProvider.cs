@@ -23,6 +23,8 @@ namespace WorkflowApp.Api.Tests.Helpers
             {
                 new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(ClaimTypes.Name, "testuser"),
+                new Claim("displayName", "Test User"),
+                new Claim(ClaimTypes.Role, "Applicant"),
             };
 
             // シークレットキーを使用して署名資格情報を作成

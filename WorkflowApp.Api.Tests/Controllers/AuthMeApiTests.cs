@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using WorkflowApp.Api.DTOs.Auth;
 using WorkflowApp.Api.Tests.Helpers;
 
 namespace WorkflowApp.Api.Tests.Controllers
@@ -66,26 +67,14 @@ namespace WorkflowApp.Api.Tests.Controllers
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            var me = await response.Content.ReadFromJsonAsync<MeResponseDto>(
+            var me = await response.Content.ReadFromJsonAsync<MeResponse>(
                 cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(me);
             Assert.True(me.UserId > 0);
             Assert.Equal(registerRequest.loginId, me.LoginId);
             Assert.Equal(registerRequest.displayName, me.DisplayName);
-        }
-
-
-        private sealed class LoginResponse
-        {
-            public string Token { get; set; } = default!;
-        }
-
-        private sealed class MeResponseDto
-        {
-            public int UserId { get; set; }
-            public string LoginId { get; set; } = default!;
-            public string DisplayName { get; set; } = default!;
+            Assert.Equal("Applicant", me.Role);
         }
 
         [Fact]
@@ -100,6 +89,11 @@ namespace WorkflowApp.Api.Tests.Controllers
             
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        private sealed class LoginResponse
+        {
+            public string Token { get; set; } = default!;
         }
     }
 }
