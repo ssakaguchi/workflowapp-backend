@@ -243,6 +243,38 @@ namespace WorkflowApp.Api.Controllers
         }
 
         /// <summary>
+        /// 認証されたユーザーが承認者である申請の一覧をページネーション付きで取得します。
+        /// </summary>
+        /// <param name="page">取得するページ番号</param>
+        /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>ページネーションされた承認リクエストの一覧</returns>
+        [Authorize(Roles = nameof(UserRole.Approver))]
+        [HttpGet("my-approval-requests")]
+        public async Task<ActionResult<PagedResponse<ApplicationListItemResponse>>> GetMyApprovalRequests(
+           [FromQuery] int page = 1,
+           [FromQuery] int pageSize = 10,
+           CancellationToken cancellationToken = default)
+        {
+            if (page < 1) { page = 1; }
+
+            if (pageSize < 1) { pageSize = 10; }
+
+            if (pageSize > 100) { pageSize = 100; }
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _service.GetMyApprovalRequestsAsync(page, pageSize, userId, cancellationToken);
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// 指定されたステータスが無効かどうかを判定します。
         /// </summary>
         /// <param name="trimmedStatus">前後の空白を除去したステータス文字列</param>

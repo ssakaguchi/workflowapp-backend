@@ -313,5 +313,51 @@ namespace WorkflowApp.Api.Services
                 TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
             };
         }
+
+
+        /// <summary>
+        /// 承認者が自分に割り当てられた申請の一覧をページネーション付きで取得します。
+        /// </summary>
+        /// <param name="page">取得するページ番号</param>
+        /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="userId">フィルタリングするユーザーID</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>ページネーションされた承認リクエストの一覧</returns>
+        public async Task<PagedResponse<ApplicationListItemResponse>> GetMyApprovalRequestsAsync(int page, int pageSize, int userId, CancellationToken cancellationToken)
+        {
+            // クエリの初期化
+            var query = _dbContext.Applications
+                .AsNoTracking()
+                .Where(a => 
+                  a.Status == WorkflowStatus.Pending && 
+                  a.ApprovalSteps.Any(s =>
+                      s.ApproverUserId == userId &&
+                      s.Status == ApprovalStepStatus.Pending));
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
+            var items = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new ApplicationListItemResponse
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Status = x.Status.ToString(),
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedResponse<ApplicationListItemResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
     }
 }

@@ -20,18 +20,19 @@ Content-Type: application/json
   "password": "Password123"
 }
 
-##### 動作しなかったためコメントアウト
+### get current user info
 GET {{WorkflowApp.Api_HostAddress}}/api/sample/me
 Authorization: Bearer {{token}}
 
-###
+### create application
 POST {{WorkflowApp.Api_HostAddress}}/api/applications
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "title": "出張申請",
-  "content": "4月10日の東京出張について申請します。"
+  "content": "4月10日の東京出張について申請します。",
+  "approverUserId": 2
 }
 
 ### update status
@@ -51,4 +52,9 @@ Authorization: Bearer {{token}}
 
 ### get approvers
 GET {{WorkflowApp.Api_HostAddress}}/api/users/approvers
+Authorization: Bearer {{token}}
+
+
+### get my approval requests
+GET {{WorkflowApp.Api_HostAddress}}/api/applications/my-approval-requests?page=1&pageSize=10
 Authorization: Bearer {{token}}

@@ -21,5 +21,7 @@ namespace WorkflowApp.Api.Services.Interfaces
         Task<bool> UpdateWorkflowStatusAsync(int id, WorkflowStatus status, int currentUserId, CancellationToken cancellationToken);
 
         Task<PagedResponse<ApplicationListItemResponse>> GetApplicationsAsync(int page, int pageSize, string? status, int userId, CancellationToken cancellationToken);
+
+        Task<PagedResponse<ApplicationListItemResponse>> GetMyApprovalRequestsAsync(int page, int pageSize, int userId, CancellationToken cancellationToken);
     }
 }
