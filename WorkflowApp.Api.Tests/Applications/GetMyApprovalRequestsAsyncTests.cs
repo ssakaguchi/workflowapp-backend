@@ -336,6 +336,182 @@ namespace WorkflowApp.Api.Tests.Applications
             responseBody.Items.Should().HaveCount(0);
         }
 
+        [Fact]
+        public async Task pageSizeを指定した場合は指定件数だけ取得できる()
+        {
+            // Arrange
+            await ResetDatabaseAsync();
+
+            var client = _factory.CreateClient();
+
+            string token;
+
+            // テストデータのセットアップ
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+                var applicantUser = new User
+                {
+                    LoginId = "applicant01",
+                    DisplayName = "テスト申請者",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Applicant,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var approverUser = new User
+                {
+                    LoginId = "approver01",
+                    DisplayName = "テスト承認者",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Approver,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                dbContext.Users.AddRange(applicantUser, approverUser);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+                // 2件のPending状態の申請を作成
+                var application1 = CreatePendingApplication(applicantUser.Id, approverUser.Id, "申請1");
+                var application2 = CreatePendingApplication(applicantUser.Id, approverUser.Id, "申請2");
+
+                dbContext.Applications.AddRange(application1, application2);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+                token = jwtTokenService.CreateToken(approverUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act - ページサイズ1で取得
+            var response = await client.GetAsync(
+                "/api/applications/my-approval-requests?page=1&pageSize=1",
+                TestContext.Current.CancellationToken);
+
+            // Assert - ページサイズ1で取得されることを確認
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var responseBody = await response.Content.ReadFromJsonAsync<PagedResponse<ApplicationListItemResponse>>(
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            responseBody.Should().NotBeNull();
+            responseBody!.Items.Should().HaveCount(1);
+            responseBody.TotalCount.Should().Be(2);
+            responseBody.TotalPages.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task ApplicationStatusがRejectedの場合はApprovalStepがPendingでも取得されない()
+        {
+            // Arrange - ApplicationStatusがRejectedの申請を作成
+            await ResetDatabaseAsync();
+
+            var client = _factory.CreateClient();
+
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+                var applicantUser = new User
+                {
+                    LoginId = "applicant01",
+                    DisplayName = "テスト申請者",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Applicant,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var approverUser = new User
+                {
+                    LoginId = "approver01",
+                    DisplayName = "テスト承認者",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Approver,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                dbContext.Users.AddRange(applicantUser, approverUser);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+                var rejectedApplication = new Application
+                {
+                    Title = "却下済み申請",
+                    Content = "却下済みの申請です。",
+                    ApplicantUserId = applicantUser.Id,
+                    Status = WorkflowStatus.Rejected,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    ApprovalSteps =
+                    [
+                        new ApprovalStep
+                        {
+                            StepOrder = 1,
+                            ApproverUserId = approverUser.Id,
+                            Status = ApprovalStepStatus.Pending,
+                        }
+                    ]
+                };
+
+                dbContext.Applications.Add(rejectedApplication);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+                token = jwtTokenService.CreateToken(approverUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act
+            var response = await client.GetAsync(
+                "/api/applications/my-approval-requests",
+                TestContext.Current.CancellationToken);
+
+            // Assert - ApplicationStatusがRejectedのため、取得されないことを確認
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var responseBody = await response.Content.ReadFromJsonAsync<PagedResponse<ApplicationListItemResponse>>(
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            responseBody.Should().NotBeNull();
+            responseBody!.Items.Should().BeEmpty();
+        }
+
+        private Application CreatePendingApplication(int applicantUserId, int approverUserId, string title)
+        {
+            return
+                new Application
+                {
+                    Title = title,
+                    Content = "テスト申請内容",
+                    Status = WorkflowStatus.Pending,
+                    ApplicantUserId = applicantUserId,
+                    CreatedAt = DateTime.UtcNow,
+                    ApprovalSteps = new List<ApprovalStep>
+                    {
+                        new ApprovalStep
+                        {
+                            ApproverUserId = approverUserId,
+                            StepOrder = 1,
+                            Status = ApprovalStepStatus.Pending,
+                        }
+                    }
+                };
+        }
+
         private async Task ResetDatabaseAsync()
         {
             using var scope = _factory.Services.CreateScope();
