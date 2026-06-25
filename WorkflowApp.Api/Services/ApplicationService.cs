@@ -111,10 +111,12 @@ namespace WorkflowApp.Api.Services
         /// </summary>
         /// <param name="applicationId">取得する申請のID</param>
         /// <param name="userId">申請者のユーザーID</param>
+        /// <param name="currentUserRole">現在のユーザーの役割</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>申請の詳細情報</returns>
         public async Task<ApplicationDetailResponse?> GetDetailAsync(int applicationId,
                                                                      int userId,
+                                                                     UserRole currentUserRole,
                                                                      CancellationToken cancellationToken)
         {
             return await _dbContext.Applications
@@ -122,6 +124,7 @@ namespace WorkflowApp.Api.Services
                     a.Id == applicationId &&
                     // 申請者本人または承認者であれば、申請の詳細を取得できるようにします。
                     (
+                        currentUserRole == UserRole.Admin ||
                         a.ApplicantUserId == userId ||
                         a.ApprovalSteps.Any(s => s.ApproverUserId == userId)
                     ))
@@ -328,11 +331,49 @@ namespace WorkflowApp.Api.Services
             // クエリの初期化
             var query = _dbContext.Applications
                 .AsNoTracking()
-                .Where(a => 
-                  a.Status == WorkflowStatus.Pending && 
+                .Where(a =>
+                  a.Status == WorkflowStatus.Pending &&
                   a.ApprovalSteps.Any(s =>
                       s.ApproverUserId == userId &&
                       s.Status == ApprovalStepStatus.Pending));
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
+            var items = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new ApplicationListItemResponse
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Status = x.Status.ToString(),
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedResponse<ApplicationListItemResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
+
+        /// <summary>
+        /// 管理者がすべての申請の一覧をページネーション付きで取得します。
+        /// </summary>
+        /// <param name="page">取得するページ番号</param>
+        /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>ページネーションされた申請の一覧</returns>
+        public async Task<PagedResponse<ApplicationListItemResponse>> GetAdminApplicationsAsync(int page, int pageSize, CancellationToken cancellationToken)
+        {
+            // クエリの初期化
+            var query = _dbContext.Applications.AsNoTracking();
 
             var totalCount = await query.CountAsync(cancellationToken);
 

@@ -113,8 +113,10 @@ namespace WorkflowApp.Api.Tests.Applications
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
-        [Fact]
-        public async Task Applicantがステータス更新しようとした場合_403Forbiddenを返すこと()
+        [Theory]
+        [InlineData(UserRole.Applicant)]
+        [InlineData(UserRole.Admin)]
+        public async Task Approver以外がステータス更新しようとした場合_403Forbiddenを返すこと(UserRole userRole)
         {
             // Arrange
             var client = _factory.CreateClient();
@@ -128,7 +130,7 @@ namespace WorkflowApp.Api.Tests.Applications
                 var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
 
                 // テストユーザーの作成
-                var loginUser = await CreateUserAsync(dbContext, "applicant01", "テスト申請者", UserRole.Applicant);
+                var loginUser = await CreateUserAsync(dbContext, "applicant01", "テスト申請者", userRole);
 
                 // 承認ステップの作成
                 var approvalSteps = CreateApprovalSteps(loginUser.Id, stepOrder: 1, status: ApprovalStepStatus.Pending);

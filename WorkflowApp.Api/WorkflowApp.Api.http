@@ -6,9 +6,9 @@ POST {{WorkflowApp.Api_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
-  "loginId": "testuser",
+  "loginId": "applicant01",
   "displayName": "Test User",
-  "password": "Password123"
+  "password": "ChangeMe_Applicant_123!"
 }
 
 ### login
@@ -16,12 +16,12 @@ POST {{WorkflowApp.Api_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "loginId": "testuser",
-  "password": "Password123"
+  "loginId": "applicant01",
+  "password": "ChangeMe_Applicant_123!"
 }
 
 ### get current user info
-GET {{WorkflowApp.Api_HostAddress}}/api/sample/me
+GET {{WorkflowApp.Api_HostAddress}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### create application
@@ -57,4 +57,8 @@ Authorization: Bearer {{token}}
 
 ### get my approval requests
 GET {{WorkflowApp.Api_HostAddress}}/api/applications/my-approval-requests?page=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### Admin用の申請一覧取得API
+GET {{WorkflowApp.Api_HostAddress}}/api/applications/admin?page=1&pageSize=10
 Authorization: Bearer {{token}}

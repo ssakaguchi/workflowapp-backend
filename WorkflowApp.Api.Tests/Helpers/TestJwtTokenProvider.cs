@@ -16,15 +16,16 @@ namespace WorkflowApp.Api.Tests.Helpers
         /// テスト用のJWTトークンを生成します。ユーザーIDを指定することができます。
         /// </summary>
         /// <param name="userId">ユーザーID</param>
+        /// <param name="role">ユーザーの役割</param>
         /// <returns>JWTトークン</returns>
-        public static string CreateToken(string userId = "1")
+        public static string CreateToken(string userId = "1", string role = "Applicant")
         {
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(ClaimTypes.Name, "testuser"),
                 new Claim("displayName", "Test User"),
-                new Claim(ClaimTypes.Role, "Applicant"),
+                new Claim(ClaimTypes.Role, role),
             };
 
             // シークレットキーを使用して署名資格情報を作成

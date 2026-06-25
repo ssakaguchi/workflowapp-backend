@@ -329,5 +329,55 @@ namespace WorkflowApp.Api.Tests.Applications
 
             return token;
         }
+
+        [Fact]
+        public async Task Adminが申請を作成しようとした場合は403Forbiddenを返すこと()
+        {
+            // Arrange - Adminユーザーを作成し、トークンを取得
+            var client = _factory.CreateClient();
+            int adminUserId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+                // Adminユーザーの作成
+                var adminUser = new User
+                {
+                    LoginId = $"admin-{Guid.NewGuid()}",
+                    DisplayName = "テスト管理者",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Admin,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                dbContext.Users.Add(adminUser);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                adminUserId = adminUser.Id;
+                token = jwtTokenService.CreateToken(adminUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var request = new
+            {
+                Title = "管理者による申請",
+                Content = "これは管理者が作成した申請です。",
+                ApproverUserId = 1
+            };
+
+            // Act - Adminユーザーが申請を作成しようとする
+            var response = await client.PostAsJsonAsync("/api/applications",
+                                                        request,
+                                                        cancellationToken: TestContext.Current.CancellationToken);
+            // Assert - 403 Forbiddenが返されることを確認
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+            
+            // DBに保存されていないことを確認
+            using var verifyScope = _factory.Services.CreateScope();
+            var verifyDbContext = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            verifyDbContext.Applications.Should().BeEmpty();
+        }
     }
 }

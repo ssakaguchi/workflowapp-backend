@@ -168,5 +168,184 @@ namespace WorkflowApp.Api.Tests.Applications
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
         }
+
+        [Fact]
+        public async Task Adminは他人の申請詳細を取得できること()
+        {
+            // Arrange - 管理者ユーザーを作成し、他人の申請を作成しておく
+            var client = _factory.CreateClient();
+            int otherUsersApplicationId;
+            string token;
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+                var adminUser = new User
+                {
+                    LoginId = "admin01",
+                    DisplayName = "管理者ユーザー",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Admin,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var otherUser = new User
+                {
+                    LoginId = "other01",
+                    DisplayName = "他ユーザー",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Applicant,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                dbContext.Users.AddRange(adminUser, otherUser);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                var otherUsersApplication = new Application
+                {
+                    Title = "他ユーザーの申請",
+                    Content = "これは管理者が取得可能です。",
+                    Status = WorkflowStatus.Pending,
+                    ApplicantUserId = otherUser.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+                dbContext.Applications.Add(otherUsersApplication);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                otherUsersApplicationId = otherUsersApplication.Id;
+                token = jwtTokenService.CreateToken(adminUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            // Act - 管理者ユーザーで他人の申請詳細を取得
+            var response = await client.GetAsync($"/api/applications/{otherUsersApplicationId}", TestContext.Current.CancellationToken);
+
+            // Assert - 管理者ユーザーは他人の申請詳細を取得できること
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var responseBody =
+                await response.Content.ReadFromJsonAsync<ApplicationDetailResponse>(cancellationToken: TestContext.Current.CancellationToken);
+            responseBody.Should().NotBeNull();
+            responseBody.Id.Should().Be(otherUsersApplicationId);
+            responseBody.Title.Should().Be("他ユーザーの申請");
+        }
+
+        [Fact]
+        public async Task Applicantは他人の申請詳細を取得できないこと()
+        {
+            // Arrange - 他人の申請を作成しておく
+            var client = _factory.CreateClient();
+            int otherUsersApplicationId;
+            string token;
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+                var loginUser = new User
+                {
+                    LoginId = "applicant01",
+                    DisplayName = "ログインユーザー",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Applicant,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                var otherUser = new User
+                {
+                    LoginId = "other01",
+                    DisplayName = "他ユーザー",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Applicant,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                dbContext.Users.AddRange(loginUser, otherUser);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                var otherUsersApplication = new Application
+                {
+                    Title = "他ユーザーの申請",
+                    Content = "これは取得不可です。",
+                    Status = WorkflowStatus.Pending,
+                    ApplicantUserId = otherUser.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+                dbContext.Applications.Add(otherUsersApplication);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                otherUsersApplicationId = otherUsersApplication.Id;
+                token = jwtTokenService.CreateToken(loginUser).Token;
+            }
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Act - 他人の申請詳細を取得しようとする
+            var response =
+                await client.GetAsync($"/api/applications/{otherUsersApplicationId}", TestContext.Current.CancellationToken);
+
+            // Assert - 他人の申請詳細は取得できないこと
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task Approverは自分に回付されていない申請詳細を取得できないこと()
+        {
+            // Arrange - 他人の申請を作成しておく
+            var client = _factory.CreateClient();
+            int otherUsersApplicationId;
+            string token;
+            
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jwtTokenService = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+                var approverUser = new User
+                {
+                    LoginId = "approver01",
+                    DisplayName = "承認者ユーザー",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Approver,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                var otherUser = new User
+                {
+                    LoginId = "other01",
+                    DisplayName = "他ユーザー",
+                    PasswordHash = "dummy-hash",
+                    Role = UserRole.Applicant,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                dbContext.Users.AddRange(approverUser, otherUser);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                var otherUsersApplication = new Application
+                {
+                    Title = "他ユーザーの申請",
+                    Content = "これは取得不可です。",
+                    Status = WorkflowStatus.Pending,
+                    ApplicantUserId = otherUser.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+                dbContext.Applications.Add(otherUsersApplication);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                otherUsersApplicationId = otherUsersApplication.Id;
+                token = jwtTokenService.CreateToken(approverUser).Token;
+            }
+            
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Act - 他人の申請詳細を取得しようとする
+            var response = await client.GetAsync($"/api/applications/{otherUsersApplicationId}", TestContext.Current.CancellationToken);
+
+            // Assert - 他人の申請詳細は取得できないこと
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
     }
 }

@@ -12,7 +12,7 @@ namespace WorkflowApp.Api.Services.Interfaces
 
         Task<List<ApplicationListItemResponse>> GetListAsync(int userId, CancellationToken cancellationToken);
 
-        Task<ApplicationDetailResponse?> GetDetailAsync(int id, int userId, CancellationToken cancellationToken);
+        Task<ApplicationDetailResponse?> GetDetailAsync(int id, int userId, UserRole currentUserRole, CancellationToken cancellationToken);
 
         Task<bool> DeleteAsync(int id, string userIdClaim, CancellationToken cancellationToken);
 
@@ -23,5 +23,7 @@ namespace WorkflowApp.Api.Services.Interfaces
         Task<PagedResponse<ApplicationListItemResponse>> GetApplicationsAsync(int page, int pageSize, string? status, int userId, CancellationToken cancellationToken);
 
         Task<PagedResponse<ApplicationListItemResponse>> GetMyApprovalRequestsAsync(int page, int pageSize, int userId, CancellationToken cancellationToken);
+
+        Task<PagedResponse<ApplicationListItemResponse>> GetAdminApplicationsAsync(int page, int pageSize, CancellationToken cancellationToken);
     }
 }
