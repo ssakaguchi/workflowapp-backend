@@ -183,7 +183,7 @@ namespace WorkflowApp.Api.Tests.Applications
         [InlineData(UserRole.Approver)]
         public async Task Admin以外の場合は403Forbiddenを返す(UserRole role)
         {
-            // Arrange - Adminユーザーで認証されたクライアントを作成
+            // Arrange - Admin以外のユーザーで認証されたクライアントを作成
             await ResetDatabaseAsync();
             var client = _factory.CreateClient();
             string token;
