@@ -146,7 +146,7 @@ namespace WorkflowApp.Api.Controllers
         /// </summary>
         /// <param name="id">削除する申請のID</param>
         /// <returns>削除結果</returns>
-        [Authorize(Roles = "Applicant,Approver")]
+        [Authorize(Roles = nameof(UserRole.Applicant) + "," + nameof(UserRole.Approver))]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
