@@ -27,6 +27,7 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="request">作成する申請の情報</param>
         /// <param name="none">キャンセルトークン</param>
         /// <returns>作成された申請のID</returns>
+        [Authorize(Roles = nameof(UserRole.Applicant) + "," + nameof(UserRole.Approver))]
         [HttpPost]
 
         public async Task<IActionResult> Create([FromBody] CreateApplicationRequest request,
@@ -89,7 +90,13 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _service.GetDetailAsync(id, userId, none);
+            var roleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<UserRole>(roleClaim, out var role))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _service.GetDetailAsync(id, userId, role, none);
             if (result == null)
             {
                 return NotFound();
@@ -105,6 +112,7 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="request">更新する申請の情報</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>更新結果</returns>
+        [Authorize(Roles = nameof(UserRole.Applicant) + "," + nameof(UserRole.Approver))]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, UpdateApplicationRequest request, CancellationToken cancellationToken)
         {
@@ -138,6 +146,7 @@ namespace WorkflowApp.Api.Controllers
         /// </summary>
         /// <param name="id">削除する申請のID</param>
         /// <returns>削除結果</returns>
+        [Authorize(Roles = nameof(UserRole.Applicant) + "," + nameof(UserRole.Approver))]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
@@ -270,6 +279,38 @@ namespace WorkflowApp.Api.Controllers
             }
 
             var result = await _service.GetMyApprovalRequestsAsync(page, pageSize, userId, cancellationToken);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 管理者がすべての申請の一覧をページネーション付きで取得します。
+        /// </summary>
+        /// <param name="page">取得するページ番号</param>
+        /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="cancellationToken">キャンセルトークン</param>
+        /// <returns>ページネーションされた申請の一覧</returns>
+        [Authorize(Roles = nameof(UserRole.Admin))]
+        [HttpGet("admin")]
+        public async Task<ActionResult<PagedResponse<ApplicationListItemResponse>>> GetAdminApplications(
+           [FromQuery] int page = 1,
+           [FromQuery] int pageSize = 10,
+           CancellationToken cancellationToken = default)
+        {
+            if (page < 1) { page = 1; }
+
+            if (pageSize < 1) { pageSize = 10; }
+
+            if (pageSize > 100) { pageSize = 100; }
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out _))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _service.GetAdminApplicationsAsync(page, pageSize, cancellationToken);
 
             return Ok(result);
         }

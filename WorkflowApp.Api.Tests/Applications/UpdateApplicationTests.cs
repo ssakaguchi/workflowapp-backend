@@ -186,9 +186,9 @@ namespace WorkflowApp.Api.Tests.Applications
             var userId = 1; // テストユーザーID
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", TestJwtTokenProvider.CreateToken(userId.ToString()));
-            
+
             var nonExistentApplicationId = 9999; // 存在しない申請ID
-            
+
             var request = new UpdateApplicationRequest
             {
                 Title = "更新後タイトル",
@@ -197,9 +197,50 @@ namespace WorkflowApp.Api.Tests.Applications
 
             // Act
             var response = await client.PutAsJsonAsync($"/api/applications/{nonExistentApplicationId}", request, cancellationToken: TestContext.Current.CancellationToken);
-            
+
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Adminが申請を更新しようとした場合は403Forbiddenを返すこと()
+        {
+            // Arrange - Adminユーザーとして認証されたクライアントを作成
+            var client = _factory.CreateClient();
+            var adminUserId = 2; // 管理者ユーザーID
+
+            client.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", TestJwtTokenProvider.CreateToken(adminUserId.ToString(), "Admin"));
+
+            int applicationId;
+
+            // 事前に他のユーザーの申請を作成しておく
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var application = new Application
+                {
+                    ApplicantUserId = 1, // 別のユーザーID
+                    Title = "他人の申請タイトル",
+                    Content = "他人の申請内容",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                dbContext.Applications.Add(application);
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                applicationId = application.Id;
+            }
+            var request = new UpdateApplicationRequest
+            {
+                Title = "更新後タイトル",
+                Content = "更新後本文"
+            };
+
+            // Act
+            var response = await client.PutAsJsonAsync($"/api/applications/{applicationId}", request, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert - Adminユーザーは申請の更新が許可されていないため、403 Forbiddenを返すことを確認
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
     }
 }
