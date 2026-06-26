@@ -112,7 +112,7 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="request">更新する申請の情報</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>更新結果</returns>
-        [Authorize(Roles = "Applicant,Approver")]
+        [Authorize(Roles = nameof(UserRole.Applicant) + "," + nameof(UserRole.Approver))]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, UpdateApplicationRequest request, CancellationToken cancellationToken)
         {
