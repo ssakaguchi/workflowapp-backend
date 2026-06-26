@@ -110,7 +110,7 @@ namespace WorkflowApp.Api.Services
         /// 申請の詳細を非同期で取得します。
         /// </summary>
         /// <param name="applicationId">取得する申請のID</param>
-        /// <param name="userId">申請者のユーザーID</param>
+        /// <param name="userId">現在のユーザーID</param>
         /// <param name="currentUserRole">現在のユーザーの役割</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>申請の詳細情報</returns>
