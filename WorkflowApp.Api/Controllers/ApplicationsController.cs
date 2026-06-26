@@ -27,7 +27,7 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="request">作成する申請の情報</param>
         /// <param name="none">キャンセルトークン</param>
         /// <returns>作成された申請のID</returns>
-        [Authorize(Roles = "Applicant,Approver")]
+        [Authorize(Roles = nameof(UserRole.Applicant) + "," + nameof(UserRole.Approver))]
         [HttpPost]
 
         public async Task<IActionResult> Create([FromBody] CreateApplicationRequest request,
