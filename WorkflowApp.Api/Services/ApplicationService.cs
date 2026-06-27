@@ -257,9 +257,10 @@ namespace WorkflowApp.Api.Services
         {
             // クエリの初期化
             var query = _dbContext.Applications
-                .Where(x => x.ApplicantUserId == userId ||
-                            x.ApprovalSteps.Any(s => s.ApproverUserId.Equals(userId)))
-                .AsQueryable();
+                .AsNoTracking()
+                .Where(application =>
+                    application.ApplicantUserId == userId ||
+                    application.ApprovalSteps.Any(s => s.ApproverUserId == userId));
 
             // 無効なステータスが指定された場合は、フィルタリングを行わない
             if (!string.IsNullOrWhiteSpace(status) &&
@@ -271,29 +272,8 @@ namespace WorkflowApp.Api.Services
             var totalCount = await query.CountAsync(cancellationToken);
 
             // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
-            var items = await query
-                .OrderByDescending(a => a.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new ApplicationListItemResponse
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Status = x.Status.ToString(),
-                    CreatedAt = x.CreatedAt
-                })
-                .ToListAsync(cancellationToken);
-
-            return new PagedResponse<ApplicationListItemResponse>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
-            };
+            return await CreatePagedResponse(page, pageSize, query, totalCount, cancellationToken);
         }
-
 
         /// <summary>
         /// 承認者が自分に割り当てられた申請の一覧をページネーション付きで取得します。
@@ -317,28 +297,11 @@ namespace WorkflowApp.Api.Services
             var totalCount = await query.CountAsync(cancellationToken);
 
             // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
-            var items = await query
-                .OrderByDescending(a => a.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new ApplicationListItemResponse
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Status = x.Status.ToString(),
-                    CreatedAt = x.CreatedAt
-                })
-                .ToListAsync(cancellationToken);
-
-            return new PagedResponse<ApplicationListItemResponse>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
-            };
+            return await CreatePagedResponse(page, pageSize, query, totalCount, cancellationToken);
         }
+
+
+        #region private methods
 
         /// <summary>
         /// 管理者がすべての申請の一覧をページネーション付きで取得します。
@@ -355,18 +318,30 @@ namespace WorkflowApp.Api.Services
             var totalCount = await query.CountAsync(cancellationToken);
 
             // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
+            return await CreatePagedResponse(page, pageSize, query, totalCount, cancellationToken);
+        }
+
+        /// <summary>
+        /// ページングされたレスポンスを作成します。
+        /// </summary>
+        /// <param name="page">現在のページ番号</param>
+        /// <param name="pageSize">1ページあたりのアイテム数</param>
+        /// <param name="query">データベースクエリ</param>
+        /// <param name="totalCount">総アイテム数</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>ページングされたレスポンス</returns>
+        private static async Task<PagedResponse<ApplicationListItemResponse>> CreatePagedResponse(int page,
+                                                                        int pageSize,
+                                                                        IQueryable<Application> query,
+                                                                        int totalCount,
+                                                                        CancellationToken cancellationToken)
+        {
             var items = await query
-                .OrderByDescending(a => a.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new ApplicationListItemResponse
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Status = x.Status.ToString(),
-                    CreatedAt = x.CreatedAt
-                })
-                .ToListAsync(cancellationToken);
+                            .OrderByDescending(x => x.CreatedAt)
+                            .Skip((page - 1) * pageSize)
+                            .Take(pageSize)
+                            .Select(ApplicationListItemResponse.Projection)
+                            .ToListAsync(cancellationToken);
 
             return new PagedResponse<ApplicationListItemResponse>
             {
@@ -377,5 +352,7 @@ namespace WorkflowApp.Api.Services
                 TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
             };
         }
+
+        #endregion
     }
 }

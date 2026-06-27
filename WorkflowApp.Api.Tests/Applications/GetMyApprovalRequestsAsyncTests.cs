@@ -43,6 +43,7 @@ namespace WorkflowApp.Api.Tests.Applications
             var client = _factory.CreateClient();
 
             string token;
+            int applicantUserId;
 
             // テストデータのセットアップ
             using (var scope = _factory.Services.CreateScope())
@@ -149,6 +150,7 @@ namespace WorkflowApp.Api.Tests.Applications
                 await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
                 token = jwtTokenService.CreateToken(loginApproverUser).Token;
+                applicantUserId = applicantUser.Id;
             }
 
             client.DefaultRequestHeaders.Authorization =
@@ -172,6 +174,14 @@ namespace WorkflowApp.Api.Tests.Applications
 
             responseBody.Items.Should().OnlyContain(
                 x => x.Title == "出張申請");
+
+            responseBody.Items.Should().OnlyContain(
+                x => x.Status == WorkflowStatus.Pending.ToString() || x.Status == WorkflowStatus.Approved.ToString());
+
+            responseBody.Items.Should().OnlyContain(x => x.ApplicantUserId == applicantUserId);
+
+            responseBody.Items.Should().OnlyContain(
+                x => x.ApplicantDisplayName == "テスト申請者");
         }
 
 

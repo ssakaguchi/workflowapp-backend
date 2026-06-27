@@ -15,5 +15,10 @@ namespace WorkflowApp.Api.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public List<ApprovalStep> ApprovalSteps { get; set; } = new();
+
+        /// <summary>
+        /// 申請者のユーザー情報を表すナビゲーションプロパティ
+        /// </summary>
+        public User ApplicantUser { get; set; } = null!;
     }
 }

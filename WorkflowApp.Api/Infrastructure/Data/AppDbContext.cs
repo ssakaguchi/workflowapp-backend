@@ -78,6 +78,13 @@ namespace WorkflowApp.Api.Infrastructure.Data
                 .HasForeignKey(s => s.ApplicationId)
                 .OnDelete(DeleteBehavior.Cascade);      // 申請を削除したら、紐づく承認ステップも削除する
 
+            // 申請と申請者ユーザーの関連の設定
+            modelBuilder.Entity<Application>()
+                .HasOne(a => a.ApplicantUser)           // Applicationは申請者Userを1人持つ
+                .WithMany()
+                .HasForeignKey(a => a.ApplicantUserId)
+                .OnDelete(DeleteBehavior.Restrict);     // Userが削除されても申請を削除しない
+
             // 承認ステップと承認者ユーザーの関連の設定
             modelBuilder.Entity<ApprovalStep>()
                 .HasOne(s => s.ApproverUser)            // ApprovalStepは承認者Userを1人持つ
