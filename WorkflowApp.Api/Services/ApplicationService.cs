@@ -84,29 +84,6 @@ namespace WorkflowApp.Api.Services
         }
 
         /// <summary>
-        /// 申請のリストを非同期で取得します。ユーザーIDに基づいて、申請者が作成した申請のみを返します。
-        /// </summary>
-        /// <param name="userId">申請者のユーザーID</param>
-        /// <param name="cancellationToken">キャンセレーショントークン</param>
-        /// <returns>申請のリスト</returns>
-        public async Task<List<ApplicationListItemResponse>> GetListAsync(
-            int userId,
-            CancellationToken cancellationToken)
-        {
-            return await _dbContext.Applications
-                .Where(x => x.ApplicantUserId == userId)
-                .OrderByDescending(x => x.CreatedAt)
-                .Select(x => new ApplicationListItemResponse
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    Status = x.Status.ToString(),
-                    CreatedAt = x.CreatedAt
-                })
-                .ToListAsync(cancellationToken);
-        }
-
-        /// <summary>
         /// 申請の詳細を非同期で取得します。
         /// </summary>
         /// <param name="applicationId">取得する申請のID</param>

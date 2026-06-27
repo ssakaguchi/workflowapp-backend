@@ -6,7 +6,7 @@ namespace WorkflowApp.Api.Tests.Helpers
     {
         public static IConfiguration CreateConfiguration()
         {
-            var settings = new Dictionary<string, string>
+            var settings = new Dictionary<string, string?>
             {
                 ["Jwt:Issuer"] = "WorkflowApp",
                 ["Jwt:SecretKey"] = "DEVELOPMENT_SECRET_KEY_1234567890",
