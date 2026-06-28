@@ -176,6 +176,8 @@ namespace WorkflowApp.Api.Tests.Applications
             responseBody.Items.Should().Contain(x => x.Title == "出張申請");
             responseBody.Items.Should().Contain(x => x.Title == "備品購入申請");
             responseBody.Items.Should().Contain(x => x.Title == "決裁申請書");
+            responseBody.Items.Should().OnlyContain(x => x.ApplicantUserId == 1);
+            responseBody.Items.Should().OnlyContain(x => x.ApplicantDisplayName == "テスト申請者");
         }
 
         [Theory]
