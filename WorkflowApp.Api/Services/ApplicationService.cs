@@ -300,9 +300,6 @@ namespace WorkflowApp.Api.Services
             return await CreatePagedResponse(page, pageSize, query, totalCount, cancellationToken);
         }
 
-
-        #region private methods
-
         /// <summary>
         /// 管理者がすべての申請の一覧をページネーション付きで取得します。
         /// </summary>
@@ -320,6 +317,8 @@ namespace WorkflowApp.Api.Services
             // クエリにページネーションとソートを適用し、必要なフィールドのみを選択してリストを取得
             return await CreatePagedResponse(page, pageSize, query, totalCount, cancellationToken);
         }
+
+        #region private methods
 
         /// <summary>
         /// ページングされたレスポンスを作成します。
