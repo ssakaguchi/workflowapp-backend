@@ -15,20 +15,15 @@ namespace WorkflowApp.Api.DTOs.Applications
         /// <summary>
         /// ApplicationエンティティからApplicationListItemResponseへの変換式を定義します。
         /// </summary>
-        public static Expression<Func<Application, ApplicationListItemResponse>> Projection
-        {
-            get
+        public static readonly Expression<Func<Application, ApplicationListItemResponse>> Projection =
+            application => new ApplicationListItemResponse
             {
-                return application => new ApplicationListItemResponse
-                {
-                    Id = application.Id,
-                    Title = application.Title,
-                    Status = application.Status.ToString(),
-                    CreatedAt = application.CreatedAt,
-                    ApplicantUserId = application.ApplicantUserId,
-                    ApplicantDisplayName = application.ApplicantUser.DisplayName
-                };
-            }
-        }
+                Id = application.Id,
+                Title = application.Title,
+                Status = application.Status.ToString(),
+                CreatedAt = application.CreatedAt,
+                ApplicantUserId = application.ApplicantUserId,
+                ApplicantDisplayName = application.ApplicantUser.DisplayName
+            };
     }
 }
