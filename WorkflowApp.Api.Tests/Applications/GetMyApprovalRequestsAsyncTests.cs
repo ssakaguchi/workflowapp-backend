@@ -176,7 +176,7 @@ namespace WorkflowApp.Api.Tests.Applications
                 x => x.Title == "出張申請");
 
             responseBody.Items.Should().OnlyContain(
-                x => x.Status == WorkflowStatus.Pending.ToString() || x.Status == WorkflowStatus.Approved.ToString());
+                x => x.Status == WorkflowStatus.Pending.ToString());
 
             responseBody.Items.Should().OnlyContain(x => x.ApplicantUserId == applicantUserId);
 
