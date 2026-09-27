@@ -199,6 +199,7 @@ namespace WorkflowApp.Api.Controllers
         /// <param name="page">取得するページ番号</param>
         /// <param name="pageSize">1ページあたりの件数</param>
         /// <param name="status">フィルタリングするステータス（省略可能）</param>
+        /// <param name="searchTerm">タイトルまたは申請者名の検索語（省略可能）</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>ページネーションされた申請の一覧</returns>
         [HttpGet]
@@ -206,6 +207,7 @@ namespace WorkflowApp.Api.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? status = null,
+            [FromQuery] string? searchTerm = null,
             CancellationToken cancellationToken = default)
         {
             if (page < 1) { page = 1; }
@@ -228,7 +230,7 @@ namespace WorkflowApp.Api.Controllers
                 return BadRequest("無効なステータスです。");
             }
 
-            var result = await _service.GetApplicationsAsync(page, pageSize, trimmedStatus, userId, cancellationToken);
+            var result = await _service.GetApplicationsAsync(page, pageSize, trimmedStatus, searchTerm, userId, cancellationToken);
 
             return Ok(result);
         }
@@ -238,6 +240,7 @@ namespace WorkflowApp.Api.Controllers
         /// </summary>
         /// <param name="page">取得するページ番号</param>
         /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="searchTerm">タイトルまたは申請者名の検索語（省略可能）</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>ページネーションされた承認リクエストの一覧</returns>
         [Authorize(Roles = nameof(UserRole.Approver))]
@@ -245,6 +248,7 @@ namespace WorkflowApp.Api.Controllers
         public async Task<ActionResult<PagedResponse<ApplicationListItemResponse>>> GetMyApprovalRequests(
            [FromQuery] int page = 1,
            [FromQuery] int pageSize = 10,
+           [FromQuery] string? searchTerm = null,
            CancellationToken cancellationToken = default)
         {
             if (page < 1) { page = 1; }
@@ -260,7 +264,7 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _service.GetMyApprovalRequestsAsync(page, pageSize, userId, cancellationToken);
+            var result = await _service.GetMyApprovalRequestsAsync(page, pageSize, searchTerm, userId, cancellationToken);
 
             return Ok(result);
         }
@@ -270,6 +274,7 @@ namespace WorkflowApp.Api.Controllers
         /// </summary>
         /// <param name="page">取得するページ番号</param>
         /// <param name="pageSize">1ページあたりの件数</param>
+        /// <param name="searchTerm">タイトルまたは申請者名の検索語（省略可能）</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>ページネーションされた申請の一覧</returns>
         [Authorize(Roles = nameof(UserRole.Admin))]
@@ -277,6 +282,7 @@ namespace WorkflowApp.Api.Controllers
         public async Task<ActionResult<PagedResponse<ApplicationListItemResponse>>> GetAdminApplications(
            [FromQuery] int page = 1,
            [FromQuery] int pageSize = 10,
+           [FromQuery] string? searchTerm = null,
            CancellationToken cancellationToken = default)
         {
             if (page < 1) { page = 1; }
@@ -292,7 +298,7 @@ namespace WorkflowApp.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _service.GetAdminApplicationsAsync(page, pageSize, cancellationToken);
+            var result = await _service.GetAdminApplicationsAsync(page, pageSize, searchTerm, cancellationToken);
 
             return Ok(result);
         }
